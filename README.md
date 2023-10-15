@@ -1,7 +1,7 @@
 # drivenn_public
 Public version of the DrIVeNN repo
 
-This is the repo for the [DrIVeNN project](https://arxiv.org/abs/2308.13891). Please see the [instructions markdown](instructions.md) for details on how to run the code. 
+This is the repo for the [DrIVeNN project](https://arxiv.org/abs/2308.13891). Please see the [instructions markdown](Instructions.md) for details on how to run the code. 
 
 License and Citation:
 The data pipeline was written by Natalie Wang [nwang42@jhu.edu] and can be used as-is under the GPL-3.0 License attached to the repository.
