@@ -9,7 +9,7 @@ def get_additional_data(id):
     return None
 
 for facet, name in zip(['Condition/Congestive heart failure', 'Condition/Myocardial infarction', 'Condition/Coronary artery disease'], ["CHF", "MI", "CAD"]):
-    params = {'facet': [facet], 'top': 100, 'skip': 0 }
+    params = {'facet': [facet, 'Substance Form/Principal Form'], 'top': 100, 'skip': 0 }
     export_file = f'data/NCATS_exports/export_all_uid_{name}.tsv'
     
     print("Searching NCATS for " + facet)
