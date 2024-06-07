@@ -1,19 +1,8 @@
 # data utils
 import pandas as pd
 import numpy as np
-from sklearn.decomposition import PCA
 from collections import Counter
-import random
 from operator import add
-import scipy.sparse as sp
-from sklearn import metrics
-
-# model utils
-from keras.layers.core import Dropout, Activation
-from keras import optimizers
-from keras.models import Sequential
-from keras.layers import Dense, BatchNormalization
-from keras.models import load_model
 
 # read in utils
 from utility import *
@@ -28,7 +17,7 @@ se2name.update(se2name_mono)
 se2name.update(se2name_class)
 
 # read in smiles data
-smiles = pd.read_csv("data/model_data/id_SMILE.txt", sep="\t", header=None)
+smiles = pd.read_csv("data/model_data/SMILES/id_SMILE.txt", sep="\t", header=None)
 
 # format smiles data to have same form as CID0*
 smiles.iloc[:, 0] = [f'CID{"0"*(9-len(str(drug_id)))}{drug_id}' for drug_id in smiles.iloc[:,0]]
@@ -56,8 +45,6 @@ n_drugs = len(drugs)
 n_proteins = len(proteins)
 pd.DataFrame({"proteins": proteins}).to_csv("data/model_data/proteins_ordered.csv", index=False)
 
-print(f'total drugs: {n_drugs} | total proteins: {n_proteins} | total mono se: {len(se_mono)} | total polypharmacy se: {len(ddi_se)}')
-
 # ------------------------------------ Construct Drug Features ----------------------------------------
 
 # construct mono se features
@@ -74,7 +61,7 @@ for key,value in stitch2se.items():
 pd.DataFrame({"se_mono": se_mono}).to_csv("data/model_data/se_mono_ordered.csv", index=False)
 
 # save to npy file
-np.save('../data/model_data/embeddings/drug_label.npy', drug_label)
+np.save('data/model_data/embeddings/drug_label.npy', drug_label)
 
 # construct drug protein features
 dp_adj = np.zeros((n_drugs, n_proteins))
@@ -84,11 +71,11 @@ for i in range(n_drugs):
         k = proteins.index(protein_name)
         dp_adj[i, k] = 1
 # save to npy file
-np.save('../data/model_data/embeddings/dp_adj.npy', dp_adj)
+np.save('data/model_data/embeddings/dp_adj.npy', dp_adj)
 
 
 # read in drug molecule features (embeddings from dgllife)
-molecule_embeddings  = np.load('../data/model_data/embeddings/drugname_smiles.npy')
+molecule_embeddings  = np.load('data/model_data/embeddings/drugname_smiles.npy')
 
 # format to match order of drugs
 mol_adj = np.zeros((n_drugs, len(molecule_embeddings[0])))
@@ -100,7 +87,7 @@ for i in range(n_drugs):
     mol_adj[i] = molecule_embeddings[mol_index]
 
 # save to npy file
-np.save('../data/model_data/embeddings/mol_adj.npy', mol_adj)
+np.save('data/model_data/embeddings/mol_adj.npy', mol_adj)
 
 # ------------------------------------ Construct Drug-Drug Interaction Matrices ----------------------------------------
 se2combo = {}
@@ -141,9 +128,9 @@ for i in range(n_ddi_types):
     dd_adj_list.append(mat)
 
 # save to npy file
-np.savez('../data/model_data/embeddings/ddi_adj.npy', *dd_adj_list)
+np.savez('data/model_data/embeddings/ddi_adj.npy', *dd_adj_list)
 
-
+print(f'total drugs: {n_drugs} | total proteins: {n_proteins} | total mono se: {len(se_mono)} | total polypharmacy se: {len(ddi_types)}')
 
 
 
