@@ -42,7 +42,7 @@ del mono_se_pca_vector, dp_pca_vector
 
 summary_for_model = []
 
-run_type = 'drivenn_training_terminal'
+run_type = 'drivenn_training'
 methods = 'all_dps'
 
 for i in range(len(ddi_se)):
