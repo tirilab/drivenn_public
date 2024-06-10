@@ -6,6 +6,7 @@ from operator import add
 import random
 from sklearn.decomposition import PCA
 import csv
+import os
 
 # read in utils
 from utility import *
@@ -294,6 +295,9 @@ for i, se in enumerate(ddi_types):
 datasets = [train_pairs, train_y, val_pairs, val_y, test_pairs, test_y]
 names = ["train_pairs", "train_y", "val_pairs", "val_y", "test_pairs", "test_y"]
 
+if not os.path.exists('data/model_data/TTS/'):
+    os.makedirs('data/model_data/TTS/')
+
 for data, name in zip(datasets, names):
     with open("data/model_data/TTS/" + name + ".csv", "w") as f:
         wr = csv.writer(f)
@@ -326,6 +330,9 @@ for i, se in enumerate(one_cvd_ddi_types):
 # save as csvs for replicability
 datasets = [train_pairs, train_y, val_pairs, val_y, test_pairs, test_y]
 names = ["cvd/train_pairs", "cvd/train_y", "cvd/val_pairs", "cvd/val_y", "cvd/test_pairs", "cvd/test_y"]
+
+if not os.path.exists('data/model_data/TTS/cvd/'):
+    os.makedirs('data/model_data/TTS/cvd/')
 
 for data, name in zip(datasets, names):
     with open("data/model_data/TTS/" + name + ".csv", "w") as f:
