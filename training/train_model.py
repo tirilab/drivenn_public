@@ -46,8 +46,6 @@ run_type = 'drivenn_training_terminal'
 methods = 'all_dps'
 
 for i in range(len(ddi_se)):
-    if i%100 == 0:
-        print("Training model for SE: " + str(i))
     train_x, val_x, test_x = single_data_split(total_features, i, \
                                            train_pairs, val_pairs, test_pairs, \
                                            drugs, ddi_adj)
