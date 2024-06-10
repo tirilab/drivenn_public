@@ -163,8 +163,6 @@ dd_adj_list = []
 edge_list = []
 
 for i, se in enumerate(ddi_types):
-    if i%100 == 0:
-        print(f'SE number: {i}')
     mat = np.zeros((n_drugs, n_drugs))
     curr_edges = []
 
