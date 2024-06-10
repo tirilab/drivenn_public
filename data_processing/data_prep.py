@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 from operator import add
-import random
-from sklearn.decomposition import PCA
 import csv
 import os
 

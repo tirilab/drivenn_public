@@ -1,6 +1,5 @@
 import requests
 from datetime import datetime
-import pandas as pd
 
 def get_additional_data(id):
     r = requests.get(f'https://drugs.ncats.io/api/v1/substances({id})/@additional')

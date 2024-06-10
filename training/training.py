@@ -207,10 +207,6 @@ def single_data_split(drug_feat, ddi_index, train_dp, val_dp, test_dp, drugs, dd
 
 def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, test_x, test_y, se2name, epoch=50):
     #get criteria
-    roc_score, aupr_score, f_score, thr =[], [], [], []
-    precision, recall, tpos, fpos, tneg, fneg=[], [], [], [], [], []
-    acc, mcc = [], []
-    
     k = ddi_index
     se = ddi_se[k]
     if k%100 == 0:
@@ -229,35 +225,23 @@ def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, 
     test_pred = model.predict(test_x, verbose=0)
 
     roc=metrics.roc_auc_score(test_y, test_pred)
-    roc_score.append(roc)
     aupr=metrics.average_precision_score(test_y,test_pred)
-    aupr_score.append(aupr)
 
     fpr, tpr, thresholds=metrics.roc_curve(test_y,test_pred)
     scores=[metrics.f1_score(test_y, to_labels(test_pred, t)) for t in thresholds]
     ma= max(scores)
-    f_score.append(ma)
     idx=np.argmax(scores)
     bt=thresholds[idx]
-    thr.append(bt)
 
     p=metrics.precision_score(test_y, to_labels(test_pred, bt))
-    precision.append(p)
 
     r=metrics.recall_score(test_y, to_labels(test_pred, bt))
-    recall.append(r)
 
     TP, FP, TN, FN=perf_measure(test_y,to_labels(test_pred, bt))
-    tpos.append(TP)
-    fpos.append(FP)
-    tneg.append(TN)
-    fneg.append(FN)
 
     ac = float(TP + TN)/(TP+FP+FN+TN)
-    acc.append(ac)
 
     mc=metrics.matthews_corrcoef(test_y,to_labels(test_pred, bt))
-    mcc.append(mc)
 
     if not os.path.exists(f'training/trained_models/{name}/'):
         os.makedirs(f'training/trained_models/{name}/')

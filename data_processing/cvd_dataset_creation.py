@@ -1,14 +1,6 @@
 from utility import *
-
-from collections import Counter
-
-import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-import random
 import pandas as pd
-import collections
-import json as json
 
 # load dataset
 combo2stitch, combo2se, se2name = load_combo_se(fname='data/decagon_data/bio-decagon-combo.csv')
