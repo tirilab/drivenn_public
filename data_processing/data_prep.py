@@ -3,27 +3,19 @@ import pandas as pd
 import numpy as np
 from collections import Counter
 from operator import add
+import random
+from sklearn.decomposition import PCA
 
 # read in utils
 from utility import *
 
 # read in decagon data
-combo2stitch, combo2se, se2name = load_combo_se()
-net, node2idx = load_ppi()
-stitch2se, se2name_mono = load_mono_se()
-stitch2proteins = load_targets()
-se2class, se2name_class = load_categories()
-se2name.update(se2name_mono)
-se2name.update(se2name_class)
+combo2stitch, combo2se, se2name, net, node2idx, stitch2se, se2name_mono, stitch2proteins, se2class, se2name_class = read_decagon()
 
 # read in smiles data
-smiles = pd.read_csv("data/model_data/SMILES/id_SMILE.txt", sep="\t", header=None)
+smiles = read_smiles()
 
-# format smiles data to have same form as CID0*
-smiles.iloc[:, 0] = [f'CID{"0"*(9-len(str(drug_id)))}{drug_id}' for drug_id in smiles.iloc[:,0]]
-smiles = smiles.rename(columns={0:'drug_id', 1:'smiles'})
-
-# get counts and create lists of all drugs and proteins
+# get counts and create ordered lists of all drugs and proteins
 
 # get list of all drugs
 drugs = set()
@@ -34,11 +26,22 @@ for d in combo2stitch.keys():
 drugs = list(drugs)
 pd.DataFrame({"drugs": drugs}).to_csv("data/model_data/drugs_ordered.csv", index=False)
 
+# get list of all one cvd drugs
+one_cvd_drugs = set()
+for d in pd.read_csv("data/model_data/one_cvd.csv")["drug_pairs"]:
+    d1, d2 = d.split("_")
+    one_cvd_drugs.add(d1)
+    one_cvd_drugs.add(d2)  
+one_cvd_drugs = list(one_cvd_drugs)
+n_one_cvd_drugs = len(one_cvd_drugs)
+
+pd.DataFrame({"drugs": one_cvd_drugs}).to_csv("data/model_data/one_cvd_drugs_ordered.csv", index=False)
+
 # get list of all proteins
 proteins = set()
 for p_set in stitch2proteins.values():
     proteins = proteins.union(p_set)
-proteins = list(proteins)
+proteins = [int(p) for p in list(proteins)]
 
 # get counts to help with matrix building
 n_drugs = len(drugs)
@@ -68,7 +71,7 @@ dp_adj = np.zeros((n_drugs, n_proteins))
 for i in range(n_drugs):
     drug_name = drugs[i]
     for protein_name in stitch2proteins[drug_name]:
-        k = proteins.index(protein_name)
+        k = proteins.index(int(protein_name))
         dp_adj[i, k] = 1
 # save to npy file
 np.save('data/model_data/embeddings/dp_adj.npy', dp_adj)
@@ -89,6 +92,50 @@ for i in range(n_drugs):
 # save to npy file
 np.save('data/model_data/embeddings/mol_adj.npy', mol_adj)
 
+# ------------------------------------ Construct CVD Drug Features ----------------------------------------
+
+# mono se features
+cvd_drug_label = np.zeros((n_one_cvd_drugs, len(se_mono)))
+for key,value in stitch2se.items():
+    if key in one_cvd_drugs:
+        j = one_cvd_drugs.index(key)
+    for v in value:
+        i=se_mono.index(v) 
+        cvd_drug_label[j,i]=1
+
+# save to npy file
+np.save('data/model_data/embeddings/cvd_drug_label.npy', cvd_drug_label)
+        
+# drug protein features
+cvd_dp_adj = np.zeros((n_one_cvd_drugs, n_proteins))
+for i in range(n_one_cvd_drugs):
+    drug_name = one_cvd_drugs[i]
+    for protein_name in stitch2proteins[drug_name]:
+        k = proteins.index(int(protein_name))
+        cvd_dp_adj[i, k] = 1
+
+# save to npy file
+np.save('data/model_data/embeddings/cvd_dp_adj.npy', cvd_dp_adj)
+
+# read in drug molecule features (embeddings from dgllife)
+mol_adj  = np.load('data/model_data/embeddings/mol_adj.npy')
+
+cvd_mol_adj = np.zeros((n_one_cvd_drugs, mol_adj.shape[1]))
+
+for i in range(n_one_cvd_drugs):
+    drug_name = one_cvd_drugs[i]
+    mol_index = drugs.index(drug_name)
+    mol_row = mol_adj[mol_index]
+    
+    cvd_mol_adj[i] = np.array(mol_row)
+
+# save to npy file
+np.save('data/model_data/embeddings/cvd_mol_adj.npy', cvd_mol_adj)
+
+cvd_drug_feat = np.concatenate((cvd_drug_label, cvd_dp_adj, cvd_mol_adj), axis=1)
+
+print("full cvd drug feature shape: ", cvd_drug_feat.shape)
+
 # ------------------------------------ Construct Drug-Drug Interaction Matrices ----------------------------------------
 se2combo = {}
 ddi_types = []
@@ -101,6 +148,9 @@ for drug_pair, val in combo2se.items():
             se2combo[se] = current_pairs
         else:
             se2combo[se] = [drug_pair]
+
+# save to npy file
+np.save('data/model_data/embeddings/se2combo.npy', se2combo)
         
 # only use side effects that occurred in at least 500 drug-drug pairs 
 ddi_counter = Counter(ddi_types)
@@ -128,10 +178,151 @@ for i in range(n_ddi_types):
     dd_adj_list.append(mat)
 
 # save to npy file
-np.savez('data/model_data/embeddings/ddi_adj.npy', *dd_adj_list)
+np.savez('data/model_data/embeddings/ddi_adj', *dd_adj_list)
 
 print(f'total drugs: {n_drugs} | total proteins: {n_proteins} | total mono se: {len(se_mono)} | total polypharmacy se: {len(ddi_types)}')
 
+# read in cvd files and create ordered cvd ddi lists
+one_cvd = pd.read_csv("data/model_data/one_cvd.csv")
+two_cvd = pd.read_csv("data/model_data/two_cvd.csv")
+
+one_cvd_set = []
+
+for key in one_cvd['drug_pairs']:
+    for se in list(combo2se[key]):
+        one_cvd_set.append(se)
+
+# only use side effects that occurred in at least 500 drug-drug pairs 
+one_cvd_ddi_counter = Counter(one_cvd_set)
+one_cvd_ddi_counter_500 = Counter({k: c for k, c in one_cvd_ddi_counter.items() if c >= 500})
+
+one_cvd_ddi_list = list(one_cvd_set)
+
+n_one_cvd_ddi_types = len(one_cvd_ddi_counter_500)
+one_cvd_ddi_types = list(one_cvd_ddi_counter_500.keys())
+
+pd.DataFrame({"cvd_ddi_se": one_cvd_ddi_types}).to_csv("data/model_data/one_cvd_ddi_se_ordered.csv", index=None)
+
+# ------------------------------------ Get Edges (All and CVD) ----------------------------------------
+np.random.seed(13)
+random.seed(42)
+
+# get positive and negative edges
+edges_all = []
+
+for i in range(len(ddi_types)):
+    if i%100 == 0:
+        print(f'SE number: {i}')
+    curr_se = ddi_types[i]
+    curr_edges = se2combo[curr_se]
+    curr_edges_set = set()
+    for dp in curr_edges:
+        curr_edges_set.add(dp)
+
+    c = [pair.split("_") for pair in list(curr_edges_set)]
+    
+    # create an equal number of neg edges
+    n = []
+    while len(n) < len(c):
+        d1, d2 = random.choice(drugs), random.choice(drugs)
+        rand_pair, rand_pair_inv = f'{d1}_{d2}', f'{d2}_{d1}'
+        if rand_pair not in curr_edges_set and rand_pair_inv not in curr_edges_set:
+            n.append([d1, d2])
+    
+    # create edges_all
+    all_edges = c + n
+    
+    np.random.shuffle(all_edges)
+    edges_all.append(all_edges[:len(c)])
 
 
+del c
+del n
+
+print('finished getting all edges for each SE')
+# save edges_all
+np.savez('data/model_data/edges_all', *edges_all)
+
+# get cvd positive and negative edges
+one_cvd_edges_all = []
+
+for i in range(len(one_cvd_ddi_types)):
+    if i%100 == 0:
+        print(f'SE number: {i}')
+    curr_se = one_cvd_ddi_types[i]
+    curr_edges = se2combo[curr_se]
+    curr_edges_set = set()
+    for dp in curr_edges:
+        if dp in one_cvd['drug_pairs']:
+            curr_edges_set.add(dp)
+
+    c = [pair.split("_") for pair in list(curr_edges_set)]
+    
+    # create an equal number of neg edges
+    n = []
+    while len(n) < len(c):
+        d1, d2 = random.choice(one_cvd_drugs), random.choice(one_cvd_drugs)
+        rand_pair, rand_pair_inv = f'{d1}_{d2}', f'{d2}_{d1}'
+        if rand_pair not in curr_edges_set and rand_pair_inv not in curr_edges_set:
+            n.append([d1, d2])
+    
+    # create edges_all
+    all_edges = c + n
+    np.random.shuffle(all_edges)
+    one_cvd_edges_all.append(all_edges[:len(c)])
+
+
+del c
+del n
+
+print('finished getting all edges for one cvd pairs')
+
+# save one_cvd_edges_all
+np.savez('data/model_data/one_cvd_edges_all', *one_cvd_edges_all)
+
+# ------------------------------------ Create Train Valid Test Split ----------------------------------------
+
+def get_dp_for_single_se(k, edges_all):
+    # train valid test split for drug pairs per side effect
+    val=[]
+    test=[]
+    train=[]
+
+    a = len(edges_all[k])//10
+    #print(f'se num: {k} | test and val size: {a} | train size {len(edges_all[k]) - 2*a}')
+    val.append(edges_all[k][:a])
+    test.append(edges_all[k][a:a+a])
+    train.append(edges_all[k][a+a:])
+
+    return train[0], test[0], val[0]
+
+# create train valid test splits with drug pairs and save for later
+train_dps_list = []
+valid_dps_list = []
+test_dps_list = []
+
+for se in range(len(ddi_types)):
+    train_dps, valid_dps, test_dps = get_dp_for_single_se(se, edges_all)
+    train_dps_list.append(train_dps)
+    valid_dps_list.append(valid_dps)
+    test_dps_list.append(test_dps)
+
+np.savez('data/model_data/TTS/train_dps', *train_dps_list)
+np.savez('data/model_data/TTS/valid_dps', *valid_dps_list)
+np.savez('data/model_data/TTS/test_dps', *test_dps_list)
+
+# create train valid test splits with one cvd drug pairs and save for later
+one_cvd_train_dps_list = []
+one_cvd_valid_dps_list = []
+one_cvd_test_dps_list = []
+
+for se in range(len(one_cvd_ddi_types)):
+    one_cvd_train_dps, one_cvd_valid_dps, one_cvd_test_dps = get_dp_for_single_se(se, one_cvd_edges_all)
+    one_cvd_train_dps_list.append(one_cvd_train_dps)
+    one_cvd_valid_dps_list.append(one_cvd_valid_dps)
+    one_cvd_test_dps_list.append(one_cvd_test_dps)
+
+np.savez('data/model_data/TTS/one_cvd_train_dps', *one_cvd_train_dps_list)
+np.savez('data/model_data/TTS/one_cvd_valid_dps', *one_cvd_valid_dps_list)
+np.savez('data/model_data/TTS/one_cvd_test_dps', *one_cvd_test_dps_list)
 
