@@ -174,13 +174,29 @@ np.savez('data/model_data/embeddings/ddi_adj', *dd_adj_list)
 
 # ------------------------------------ Construct Drug-Drug Interaction Matrices for Drug Pairs with at Least One CVD Drug ----------------------------------------
 
-# read in cvd files and create ordered cvd ddi lists
-one_cvd = pd.read_csv("data/model_data/one_cvd.csv")
-two_cvd = pd.read_csv("data/model_data/two_cvd.csv")
+# read in cvd df and create ordered lists
+cvd_df = pd.read_csv("data/cvd_df.csv")
 
+one_cvd = []
+two_cvd = []
+
+for key in list(combo2se.keys()):
+    drugs = key.split("_")
+    if len(drugs) > 1:
+        if drugs[0] in list(cvd_df.total_drugs):
+            one_cvd.append(key)
+            if drugs[1] in list(cvd_df.total_drugs):
+                two_cvd.append(key)
+        elif drugs[1] in list(cvd_df.total_drugs):
+            one_cvd.append(key)
+
+pd.DataFrame({"drug_pairs": one_cvd}).to_csv("data/model_data/one_cvd.csv")
+pd.DataFrame({"drug_pairs": two_cvd}).to_csv("data/model_data/two_cvd.csv")
+
+one_cvd = pd.read_csv("data/model_data/one_cvd.csv")
 one_cvd_set = []
 
-for key in one_cvd['drug_pairs']:
+for key in one_cvd["drug_pairs"]:
     for se in list(combo2se[key]):
         one_cvd_set.append(se)
 
