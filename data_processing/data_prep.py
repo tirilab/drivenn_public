@@ -48,6 +48,7 @@ n_proteins = len(proteins)
 pd.DataFrame({"proteins": proteins}).to_csv("data/model_data/proteins_ordered.csv", index=False)
 
 # ------------------------------------ Construct Drug Features ----------------------------------------
+print("Constructing Drug Features")
 
 # construct mono se features
 se_mono=[]
@@ -91,6 +92,7 @@ for i in range(n_drugs):
 np.save('data/model_data/embeddings/mol_adj.npy', mol_adj)
 
 # ------------------------------------ Construct CVD Drug Features ----------------------------------------
+print("Constructing CVD Drug Features")
 
 # mono se features
 cvd_drug_label = np.zeros((n_one_cvd_drugs, len(se_mono)))
@@ -131,6 +133,8 @@ for i in range(n_one_cvd_drugs):
 np.save('data/model_data/embeddings/cvd_mol_adj.npy', cvd_mol_adj)
 
 # ------------------------------------ Construct Drug-Drug Interaction Matrices ----------------------------------------
+print("Constructing DDI Matrices Features")
+
 se2combo = {}
 ddi_types = []
 for drug_pair, val in combo2se.items():
@@ -161,7 +165,8 @@ for i in range(n_ddi_types):
     mat = np.zeros((n_drugs, n_drugs))
     curr_se = ddi_types[i]
     drug_pairs_for_se = se2combo[curr_se]
-    for dp in drug_pairs_for_se:
+    dp_set = set(drug_pairs_for_se)
+    for dp in dp_set:
         d1, d2 = dp.split("_")
         drug1 = drugs.index(d1)
         drug2 = drugs.index(d2)
@@ -173,6 +178,7 @@ for i in range(n_ddi_types):
 np.savez('data/model_data/embeddings/ddi_adj', *dd_adj_list)
 
 # ------------------------------------ Construct Drug-Drug Interaction Matrices for Drug Pairs with at Least One CVD Drug ----------------------------------------
+print("Constructing CVD DDI Matrices Features")
 
 # read in cvd df and create ordered lists
 cvd_df = pd.read_csv("data/cvd_df.csv")
@@ -183,11 +189,11 @@ two_cvd = []
 for key in list(combo2se.keys()):
     drugs = key.split("_")
     if len(drugs) > 1:
-        if drugs[0] in list(cvd_df.total_drugs):
+        if drugs[0] in set(cvd_df.total_drugs):
             one_cvd.append(key)
-            if drugs[1] in list(cvd_df.total_drugs):
+            if drugs[1] in set(cvd_df.total_drugs):
                 two_cvd.append(key)
-        elif drugs[1] in list(cvd_df.total_drugs):
+        elif drugs[1] in set(cvd_df.total_drugs):
             one_cvd.append(key)
 
 pd.DataFrame({"drug_pairs": one_cvd}).to_csv("data/model_data/one_cvd.csv")
@@ -213,13 +219,15 @@ pd.DataFrame({"cvd_ddi_se": one_cvd_ddi_types}).to_csv("data/model_data/one_cvd_
 
 # format drug drug adjacency matrix for each side effect
 one_cvd_dd_adj_list = []
+cvd_dps = set(one_cvd['drug_pairs'])
 
 for i in range(n_one_cvd_ddi_types):
     mat = np.zeros((n_one_cvd_drugs, n_one_cvd_drugs))
     curr_se = one_cvd_ddi_types[i]
     drug_pairs_for_se = se2combo[curr_se]
-    for dp in drug_pairs_for_se:
-        if dp in one_cvd['drug_pairs']:
+    dp_set = set(drug_pairs_for_se)
+    for dp in dp_set:
+        if dp in cvd_dps:
             d1, d2 = dp.split("_")
             drug1 = one_cvd_drugs.index(d1)
             drug2 = one_cvd_drugs.index(d2)
@@ -232,8 +240,9 @@ np.savez('data/model_data/embeddings/one_cvd_ddi_adj', *one_cvd_dd_adj_list)
 
 
 # ------------------------------------ Get Edges (All and CVD) ----------------------------------------
-np.random.seed(13)
-random.seed(42)
+print("Constructing Edges")
+# np.random.seed(13)
+# random.seed(42)
 
 # get positive and negative edges
 edges_all = []
@@ -241,18 +250,18 @@ edges_all = []
 for i in range(len(ddi_types)):
     curr_se = ddi_types[i]
     curr_edges = se2combo[curr_se]
-    curr_edges_set = set()
+    curr_edges_set = []
     for dp in curr_edges:
-        curr_edges_set.add(dp)
+        curr_edges_set.append(dp)
 
-    c = [pair.split("_") for pair in list(curr_edges_set)]
+    c = [pair.split("_") for pair in list(set(curr_edges_set))]
     
     # create an equal number of neg edges
     n = []
     while len(n) < len(c):
         d1, d2 = random.choice(drugs), random.choice(drugs)
         rand_pair, rand_pair_inv = f'{d1}_{d2}', f'{d2}_{d1}'
-        if rand_pair not in curr_edges_set and rand_pair_inv not in curr_edges_set:
+        if rand_pair not in set(curr_edges_set) and rand_pair_inv not in set(curr_edges_set):
             n.append([d1, d2])
     
     # create edges_all
@@ -266,25 +275,28 @@ del c, n
 # save edges_all
 np.savez('data/model_data/edges_all', *edges_all)
 
+print("Constructing CVD Edges")
+
 # get cvd positive and negative edges
 one_cvd_edges_all = []
 
 for i in range(len(one_cvd_ddi_types)):
     curr_se = one_cvd_ddi_types[i]
     curr_edges = se2combo[curr_se]
-    curr_edges_set = set()
+    curr_edges_set = []
+    ce_set = set(one_cvd['drug_pairs'])
     for dp in curr_edges:
-        if dp in one_cvd['drug_pairs']:
-            curr_edges_set.add(dp)
+        if dp in ce_set:
+            curr_edges_set.append(dp)
 
-    c = [pair.split("_") for pair in list(curr_edges_set)]
+    c = [pair.split("_") for pair in list(set(curr_edges_set))]
     
     # create an equal number of neg edges
     n = []
     while len(n) < len(c):
         d1, d2 = random.choice(one_cvd_drugs), random.choice(one_cvd_drugs)
         rand_pair, rand_pair_inv = f'{d1}_{d2}', f'{d2}_{d1}'
-        if rand_pair not in curr_edges_set and rand_pair_inv not in curr_edges_set:
+        if rand_pair not in ce_set and rand_pair_inv not in ce_set:
             n.append([d1, d2])
     
     # create edges_all
@@ -292,13 +304,13 @@ for i in range(len(one_cvd_ddi_types)):
     np.random.shuffle(all_edges)
     one_cvd_edges_all.append(all_edges[:len(c)])
 
-
 del c, n
 
 # save one_cvd_edges_all
 np.savez('data/model_data/one_cvd_edges_all', *one_cvd_edges_all)
 
 # ------------------------------------ Create Train Valid Test Split ----------------------------------------
+print("Creating Train Test Validation Splits")
 
 def get_dp_for_single_se(k, edges_all):
     # train valid test split for drug pairs per side effect
