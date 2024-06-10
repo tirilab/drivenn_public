@@ -158,24 +158,37 @@ n_ddi_types = len(ddi_counter_500)
 ddi_types = list(ddi_counter_500.keys())
 pd.DataFrame({'ddi types': ddi_types}).to_csv("data/model_data/ddi_se_ordered.csv", index=False)
 
-# format drug drug adjacency matrix for each side effect
+# format drug drug adjacency matrix and edge list for each side effect
 dd_adj_list = []
+edge_list = []
 
-for i in range(n_ddi_types):
+for i, se in enumerate(ddi_types):
+    if i%100 == 0:
+        print(f'SE number: {i}')
     mat = np.zeros((n_drugs, n_drugs))
-    curr_se = ddi_types[i]
-    drug_pairs_for_se = se2combo[curr_se]
-    dp_set = set(drug_pairs_for_se)
-    for dp in dp_set:
+    curr_edges = []
+
+    for dp in se2combo[se]:
         d1, d2 = dp.split("_")
         drug1 = drugs.index(d1)
         drug2 = drugs.index(d2)
         mat[drug1, drug2] = 1
         mat[drug2, drug1] = 1
+        curr_edges.append([dp, 1])
+        added_neg_edge = False
+        while not added_neg_edge:
+            rand_d1, rand_d2 = np.random.randint(0, len(drugs)), np.random.randint(0, len(drugs))
+            if mat[rand_d1, rand_d2] == 0:
+                curr_edges.append([drugs[rand_d1] + "_" + drugs[rand_d2], 0])
+                added_neg_edge = True
     dd_adj_list.append(mat)
+    edge_list.append(curr_edges)
 
 # save to npy file
 np.savez('data/model_data/embeddings/ddi_adj', *dd_adj_list)
+
+# save edge_list
+np.savez('data/model_data/edge_list', *edge_list)
 
 # ------------------------------------ Construct Drug-Drug Interaction Matrices for Drug Pairs with at Least One CVD Drug ----------------------------------------
 print("Constructing CVD DDI Matrices Features")
@@ -219,139 +232,102 @@ pd.DataFrame({"cvd_ddi_se": one_cvd_ddi_types}).to_csv("data/model_data/one_cvd_
 
 # format drug drug adjacency matrix for each side effect
 one_cvd_dd_adj_list = []
+one_cvd_edge_list = []
 cvd_dps = set(one_cvd['drug_pairs'])
 
-for i in range(n_one_cvd_ddi_types):
+for i, se in enumerate(one_cvd_ddi_types):
     mat = np.zeros((n_one_cvd_drugs, n_one_cvd_drugs))
-    curr_se = one_cvd_ddi_types[i]
-    drug_pairs_for_se = se2combo[curr_se]
-    dp_set = set(drug_pairs_for_se)
-    for dp in dp_set:
+    curr_edges = []
+    
+    for dp in se2combo[se]:
         if dp in cvd_dps:
             d1, d2 = dp.split("_")
             drug1 = one_cvd_drugs.index(d1)
             drug2 = one_cvd_drugs.index(d2)
             mat[drug1, drug2] = 1
             mat[drug2, drug1] = 1
+            curr_edges.append([dp, 1])
+            added_neg_edge = False
+            while not added_neg_edge:
+                rand_d1, rand_d2 = np.random.randint(0, len(one_cvd_drugs)), np.random.randint(0, len(one_cvd_drugs))
+                if mat[rand_d1, rand_d2] == 0:
+                    curr_edges.append([drugs[rand_d1] + "_" + drugs[rand_d2], 0])
+                    added_neg_edge = True
     one_cvd_dd_adj_list.append(mat)
+    one_cvd_edge_list.append(curr_edges)
 
 #save to npy file
 np.savez('data/model_data/embeddings/one_cvd_ddi_adj', *one_cvd_dd_adj_list)
 
-
-# ------------------------------------ Get Edges (All and CVD) ----------------------------------------
-print("Constructing Edges")
-# np.random.seed(13)
-# random.seed(42)
-
-# get positive and negative edges
-edges_all = []
-
-for i in range(len(ddi_types)):
-    curr_se = ddi_types[i]
-    curr_edges = se2combo[curr_se]
-    curr_edges_set = []
-    for dp in curr_edges:
-        curr_edges_set.append(dp)
-
-    c = [pair.split("_") for pair in list(set(curr_edges_set))]
-    
-    # create an equal number of neg edges
-    n = []
-    while len(n) < len(c):
-        d1, d2 = random.choice(drugs), random.choice(drugs)
-        rand_pair, rand_pair_inv = f'{d1}_{d2}', f'{d2}_{d1}'
-        if rand_pair not in set(curr_edges_set) and rand_pair_inv not in set(curr_edges_set):
-            n.append([d1, d2])
-    
-    # create edges_all
-    all_edges = c + n
-    
-    np.random.shuffle(all_edges)
-    edges_all.append(all_edges[:len(c)])
-
-del c, n
-
-# save edges_all
-np.savez('data/model_data/edges_all', *edges_all)
-
-print("Constructing CVD Edges")
-
-# get cvd positive and negative edges
-one_cvd_edges_all = []
-
-for i in range(len(one_cvd_ddi_types)):
-    curr_se = one_cvd_ddi_types[i]
-    curr_edges = se2combo[curr_se]
-    curr_edges_set = []
-    ce_set = set(one_cvd['drug_pairs'])
-    for dp in curr_edges:
-        if dp in ce_set:
-            curr_edges_set.append(dp)
-
-    c = [pair.split("_") for pair in list(set(curr_edges_set))]
-    
-    # create an equal number of neg edges
-    n = []
-    while len(n) < len(c):
-        d1, d2 = random.choice(one_cvd_drugs), random.choice(one_cvd_drugs)
-        rand_pair, rand_pair_inv = f'{d1}_{d2}', f'{d2}_{d1}'
-        if rand_pair not in ce_set and rand_pair_inv not in ce_set:
-            n.append([d1, d2])
-    
-    # create edges_all
-    all_edges = c + n
-    np.random.shuffle(all_edges)
-    one_cvd_edges_all.append(all_edges[:len(c)])
-
-del c, n
-
-# save one_cvd_edges_all
-np.savez('data/model_data/one_cvd_edges_all', *one_cvd_edges_all)
+# save edge_list
+np.savez('data/model_data/one_cvd_edge_list', *one_cvd_edge_list)
 
 # ------------------------------------ Create Train Valid Test Split ----------------------------------------
 print("Creating Train Test Validation Splits")
 
-def get_dp_for_single_se(k, edges_all):
-    # train valid test split for drug pairs per side effect
-    val=[]
-    test=[]
-    train=[]
+# For All Pairs
+# for each SE, build a train, test, val split 
+train_pairs, train_y = [], []
+val_pairs, val_y = [], []
+test_pairs, test_y = [], []
 
-    a = len(edges_all[k])//10
-    val.append(edges_all[k][:a])
-    test.append(edges_all[k][a:a+a])
-    train.append(edges_all[k][a+a:])
+for i, se in enumerate(ddi_se):
+    edges = edge_list[i]
+    np.random.seed(13)
+    np.random.shuffle(edges)
+    a = len(edges) // 10
+    val = [e[0] for e in edges[:a]]
+    val_ys = [e[1] for e in edges[:a]]
+    test = [e[0] for e in edges[a:a+a]]
+    test_ys = [e[1] for e in edges[a:a+a]]
+    train = [e[0] for e in edges[a+a:]]
+    train_ys = [e[1] for e in edges[a+a:]]
+    
+    val_pairs.append(val)
+    val_y.append(val_ys)
+    test_pairs.append(test)
+    test_y.append(test_ys)
+    train_pairs.append(train)
+    train_y.append(train_ys)
 
-    return train[0], test[0], val[0]
+# save as csvs for replicability
+datasets = [train_pairs, train_y, val_pairs, val_y, test_pairs, test_y]
+names = ["train_pairs", "train_y", "val_pairs", "val_y", "test_pairs", "test_y"]
 
-# create train valid test splits with drug pairs and save for later
-train_dps_list = []
-valid_dps_list = []
-test_dps_list = []
+for data, name in zip(datasets, names):
+    with open("data/model_data/TTS/" + name + ".csv", "w") as f:
+        wr = csv.writer(f)
+        wr.writerows(data)
 
-for se in range(len(ddi_types)):
-    train_dps, valid_dps, test_dps = get_dp_for_single_se(se, edges_all)
-    train_dps_list.append(train_dps)
-    valid_dps_list.append(valid_dps)
-    test_dps_list.append(test_dps)
+# For CVD Pairs
+train_pairs, train_y = [], []
+val_pairs, val_y = [], []
+test_pairs, test_y = [], []
 
-np.savez('data/model_data/TTS/train_dps', *train_dps_list)
-np.savez('data/model_data/TTS/valid_dps', *valid_dps_list)
-np.savez('data/model_data/TTS/test_dps', *test_dps_list)
+for i, se in enumerate(one_cvd_ddi_se):
+    edges = one_cvd_edge_list[i]
+    np.random.seed(13)
+    np.random.shuffle(edges)
+    a = len(edges) // 10
+    val = [e[0] for e in edges[:a]]
+    val_ys = [e[1] for e in edges[:a]]
+    test = [e[0] for e in edges[a:a+a]]
+    test_ys = [e[1] for e in edges[a:a+a]]
+    train = [e[0] for e in edges[a+a:]]
+    train_ys = [e[1] for e in edges[a+a:]]
+    
+    val_pairs.append(val)
+    val_y.append(val_ys)
+    test_pairs.append(test)
+    test_y.append(test_ys)
+    train_pairs.append(train)
+    train_y.append(train_ys)
 
-# create train valid test splits with one cvd drug pairs and save for later
-one_cvd_train_dps_list = []
-one_cvd_valid_dps_list = []
-one_cvd_test_dps_list = []
+# save as csvs for replicability
+datasets = [train_pairs, train_y, val_pairs, val_y, test_pairs, test_y]
+names = ["cvd/train_pairs", "cvd/train_y", "cvd/val_pairs", "cvd/val_y", "cvd/test_pairs", "cvd/test_y"]
 
-for se in range(len(one_cvd_ddi_types)):
-    one_cvd_train_dps, one_cvd_valid_dps, one_cvd_test_dps = get_dp_for_single_se(se, one_cvd_edges_all)
-    one_cvd_train_dps_list.append(one_cvd_train_dps)
-    one_cvd_valid_dps_list.append(one_cvd_valid_dps)
-    one_cvd_test_dps_list.append(one_cvd_test_dps)
-
-np.savez('data/model_data/TTS/one_cvd_train_dps', *one_cvd_train_dps_list)
-np.savez('data/model_data/TTS/one_cvd_valid_dps', *one_cvd_valid_dps_list)
-np.savez('data/model_data/TTS/one_cvd_test_dps', *one_cvd_test_dps_list)
-
+for data, name in zip(datasets, names):
+    with open("data/model_data/TTS/" + name + ".csv", "w") as f:
+        wr = csv.writer(f)
+        wr.writerows(data)

@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import scipy.sparse as sp
 from sklearn import metrics
-from utility import * #training.
+from utility import * 
 import os
 import csv
 
@@ -82,18 +82,6 @@ def get_cvd_drug_features():
 
 	return one_cvd_mono_se_adj, one_cvd_dp_adj, one_cvd_mol_embed, one_cvd_ddi_adj
 
-def get_train_valid_test():
-	container = np.load('data/model_data/TTS/train_dps.npz')
-	all_X_train = [container[key] for key in container]
-
-	container = np.load('data/model_data/TTS/test_dps.npz')
-	all_X_test = [container[key] for key in container]
-
-	container = np.load('data/model_data/TTS/valid_dps.npz')
-	all_X_valid = [container[key] for key in container]
-
-	return all_X_train, all_X_valid, all_X_test
-
 def get_tvt():
     with open("data/model_data/TTS/test_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
@@ -106,26 +94,14 @@ def get_tvt():
         train_pairs = list(csv_reader)
     return train_pairs, val_pairs, test_pairs
 
-def get_cvd_train_valid_test():
-	container = np.load('data/model_data/TTS/one_cvd_train_dps.npz')
-	all_X_train = [container[key] for key in container]
-
-	container = np.load('data/model_data/TTS/one_cvd_test_dps.npz')
-	all_X_test = [container[key] for key in container]
-
-	container = np.load('data/model_data/TTS/one_cvd_valid_dps.npz')
-	all_X_valid = [container[key] for key in container]
-
-	return all_X_train, all_X_valid, all_X_test
-
 def get_cvd_tvt():
-    with open("data/model_data/TTS/cvd/test_pairs 2.csv", "r") as read_obj:
+    with open("data/model_data/TTS/cvd/test_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         test_pairs = list(csv_reader)
-    with open("data/model_data/TTS/cvd/val_pairs 2.csv", "r") as read_obj:
+    with open("data/model_data/TTS/cvd/val_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         val_pairs = list(csv_reader)
-    with open("data/model_data/TTS/cvd/train_pairs 2.csv", "r") as read_obj:
+    with open("data/model_data/TTS/cvd/train_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         train_pairs = list(csv_reader)
     return train_pairs, val_pairs, test_pairs
