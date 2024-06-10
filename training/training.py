@@ -1,26 +1,16 @@
-# logging utils
-import wandb
-
 # model utils
-from keras.layers.core import Dropout, Activation
 from keras import optimizers
 from keras.models import Sequential
-from keras.layers import Dense, BatchNormalization
-from keras.models import load_model
+from keras.layers import Dense, BatchNormalization, Activation
 
 # data utils
 import pandas as pd
 import numpy as np
-from sklearn.decomposition import PCA
-from collections import Counter
-import random
-from operator import add
 import scipy.sparse as sp
 from sklearn import metrics
-import umap
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from utility import *
+from utility import * #training.
+import os
+import csv
 
 # this file should contain all the functions needed to train
 
@@ -35,12 +25,12 @@ def read_decagon():
 	se2class, se2name_class = load_categories()
 	se2name.update(se2name_mono)
 	se2name.update(se2name_class)
-	se2combo = np.load('../data/model_data/se2combo.npy',allow_pickle='TRUE').item()
+	se2combo = np.load('data/model_data/embeddings/se2combo.npy',allow_pickle='TRUE').item()
 	return combo2stitch, combo2se, se2name, net, node2idx, stitch2se, se2name_mono, stitch2proteins, se2class, se2name_class, se2combo
 
 def read_smiles():
 	# read in smiles data
-	smiles = pd.read_csv("../data/SMILES/id_SMILE.txt", sep="\t", header=None)
+	smiles = pd.read_csv("data/model_data/SMILES/id_SMILE.txt", sep="\t", header=None, dtype="object")
 
 	# format smiles data to have same form as CID0*
 	smiles.iloc[:, 0] = [f'CID{"0"*(9-len(str(drug_id)))}{drug_id}' for drug_id in smiles.iloc[:,0]]
@@ -50,90 +40,99 @@ def read_smiles():
 
 def read_ordered_lists():
 	# get list of all drugs
-	drugs = list(pd.read_csv('../data/model_data/drugs_ordered.csv')['drugs'])
+	drugs = list(pd.read_csv('data/model_data/drugs_ordered.csv')['drugs'])
 
 	# get list of all proteins
-	proteins = list(pd.read_csv('../data/model_data/proteins_ordered.csv')['proteins'])
+	proteins = list(pd.read_csv('data/model_data/proteins_ordered.csv')['proteins'])
 
 	# get list of all mono se
-	se_mono = list(pd.read_csv('../data/model_data/se_mono_ordered.csv')['se_mono'])
+	se_mono = list(pd.read_csv('data/model_data/se_mono_ordered.csv')['se_mono'])
 
 	# get list of all ddi se
-	ddi_se = list(pd.read_csv('../data/model_data/ddi_se_ordered.csv')['ddi types'])
+	ddi_se = list(pd.read_csv('data/model_data/ddi_se_ordered.csv')['ddi types'])
 
 	return drugs, proteins, se_mono, ddi_se
 
 def read_cvd_lists():
     # get list of one cvd drugs
-    one_cvd = list(pd.read_csv('../data/model_data/one_cvd_drugs_ordered.csv')['cvd_drugs'])
-
-    # get list of two cvd drugs
-    two_cvd = list(pd.read_csv('../data/model_data/two_cvd_drugs_ordered.csv')['two_cvd_drugs'])
+    one_cvd = list(pd.read_csv('data/model_data/one_cvd_drugs_ordered.csv')['drugs'])
 
     # get list of cvd ddis
-    one_cvd_ddi_se = list(pd.read_csv('../data/model_data/one_cvd_ddi_se_ordered.csv')['cvd_ddi_se'])
+    one_cvd_ddi_se = list(pd.read_csv('data/model_data/one_cvd_ddi_se_ordered.csv')['cvd_ddi_se'])
 
-    # get list of cvd ddis
-    two_cvd_ddi_se = list(pd.read_csv('../data/model_data/two_cvd_ddi_se_ordered.csv')['cvd_ddi_se'])
-
-    return one_cvd, two_cvd, one_cvd_ddi_se, two_cvd_ddi_se
+    return one_cvd, one_cvd_ddi_se
 
 def get_drug_features():
-	mono_se_adj = np.load('../data/model_data/embeddings/drug_label.npy')
-	dp_adj = np.load('../data/model_data/embeddings/dp_adj.npy')
-	mol_embed = np.load('../data/model_data/embeddings/mol_adj.npy')
-	drug_feat = np.concatenate((mono_se_adj, dp_adj, mol_embed), axis=1)
+	mono_se_adj = np.load('data/model_data/embeddings/drug_label.npy')
+	dp_adj = np.load('data/model_data/embeddings/dp_adj.npy')
+	mol_embed = np.load('data/model_data/embeddings/mol_adj.npy')
 
-	container = np.load('../data/model_data/embeddings/ddi_adj.npy.npz')
+	container = np.load('data/model_data/embeddings/ddi_adj.npz')
 	ddi_adj = [container[key] for key in container]
 
-	return mono_se_adj, dp_adj, mol_embed, drug_feat, ddi_adj
+	return mono_se_adj, dp_adj, mol_embed, ddi_adj
 
-def get_drug_pairs():
-	edges = np.load('../data/model_data/pos_and_neg_edges_dict.npy', allow_pickle="TRUE").item()
-	labels = np.load('../data/model_data/pos_and_neg_edges_labels_dict.npy', allow_pickle="TRUE").item()
+def get_cvd_drug_features():
+	one_cvd_mono_se_adj = np.load('data/model_data/embeddings/cvd_drug_label.npy')
+	one_cvd_dp_adj = np.load('data/model_data/embeddings/cvd_dp_adj.npy')
+	one_cvd_mol_embed = np.load('data/model_data/embeddings/cvd_mol_adj.npy')
 
-	return edges, labels
+	container = np.load('data/model_data/embeddings/one_cvd_ddi_adj.npz')
+	one_cvd_ddi_adj = [container[key] for key in container]
 
-def get_train_test_valid():
-	container = np.load('../data/model_data/TTS/train_x.npy.npz')
+	return one_cvd_mono_se_adj, one_cvd_dp_adj, one_cvd_mol_embed, one_cvd_ddi_adj
+
+def get_train_valid_test():
+	container = np.load('data/model_data/TTS/train_dps.npz')
 	all_X_train = [container[key] for key in container]
-	container = np.load('../data/model_data/TTS/train_y.npy.npz')
-	all_y_train = [container[key] for key in container]
 
-	container = np.load('../data/model_data/TTS/test_x.npy.npz')
+	container = np.load('data/model_data/TTS/test_dps.npz')
 	all_X_test = [container[key] for key in container]
-	container = np.load('../data/model_data/TTS/test_y.npy.npz')
-	all_y_test = [container[key] for key in container]
 
-
-	container = np.load('../data/model_data/TTS/valid_x.npy.npz')
+	container = np.load('data/model_data/TTS/valid_dps.npz')
 	all_X_valid = [container[key] for key in container]
-	container = np.load('../data/model_data/TTS/valid_y.npy.npz')
-	all_y_valid = [container[key] for key in container]
 
-	return all_X_train, all_y_train, all_X_test, all_y_test, all_X_valid, all_y_valid
+	return all_X_train, all_X_valid, all_X_test
+
+def get_tvt():
+    with open("data/model_data/TTS/test_pairs.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        test_pairs = list(csv_reader)
+    with open("data/model_data/TTS/val_pairs.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        val_pairs = list(csv_reader)
+    with open("data/model_data/TTS/train_pairs.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        train_pairs = list(csv_reader)
+    return train_pairs, val_pairs, test_pairs
+
+def get_cvd_train_valid_test():
+	container = np.load('data/model_data/TTS/one_cvd_train_dps.npz')
+	all_X_train = [container[key] for key in container]
+
+	container = np.load('data/model_data/TTS/one_cvd_test_dps.npz')
+	all_X_test = [container[key] for key in container]
+
+	container = np.load('data/model_data/TTS/one_cvd_valid_dps.npz')
+	all_X_valid = [container[key] for key in container]
+
+	return all_X_train, all_X_valid, all_X_test
+
+def get_cvd_tvt():
+    with open("data/model_data/TTS/cvd/test_pairs 2.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        test_pairs = list(csv_reader)
+    with open("data/model_data/TTS/cvd/val_pairs 2.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        val_pairs = list(csv_reader)
+    with open("data/model_data/TTS/cvd/train_pairs 2.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        train_pairs = list(csv_reader)
+    return train_pairs, val_pairs, test_pairs
 
 # ------------------------------- model training functions ------------------------------
 
 # helper fns 
-
-def get_dp_for_single_se(k, edges_all):
-    # train valid test split for drug pairs per side effect
-    val=[]
-    test=[]
-    train=[]
-
-    a = len(edges_all[k])//10
-    print(f'se num: {k} | test and val size: {a} | train size {len(edges_all[k]) - 2*a}')
-    np.random.shuffle(edges_all[k])
-    val.append(edges_all[k][:a])
-    test.append(edges_all[k][a:a+a])
-    train.append(edges_all[k][a+a:])
-
-    return train[0], test[0], val[0]
-
-
 def to_labels(pos_probs, threshold):
     return (pos_probs >= threshold).astype('int')
 
@@ -155,77 +154,58 @@ def perf_measure(y_actual, y_hat):
 
     return(TP, FP, TN, FN)
 
-def construct_model(i_dim, model_type="NNPS"):
-    if model_type == "NNPS":
-        #construct model
-        model = Sequential()
-        model.add(Dense(input_dim=i_dim, kernel_initializer='glorot_normal',units=300))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
+def construct_model(i_dim):
+    # print("creating DRIVENN model")
+    #construct model
+    model = Sequential()
+    model.add(Dense(input_dim=i_dim, kernel_initializer='glorot_normal',units=300))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
 
-        model.add(Dropout(0.1))
-        model.add(Dense(input_dim=300, kernel_initializer='glorot_normal', units=200))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
+    model.add(Dense(input_dim=300, kernel_initializer='glorot_normal', units=100))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
 
-        model.add(Dropout(0.1))
-        model.add(Dense(input_dim=200, kernel_initializer='glorot_normal', units=100))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
+    model.add(Dense(input_dim=100, kernel_initializer='glorot_normal', units=1))
+    model.add(Activation('sigmoid'))
 
-        model.add(Dropout(0.1))
-        model.add(Dense(input_dim=100, kernel_initializer='glorot_normal', units=1))
-        model.add(BatchNormalization())
-        model.add(Activation('sigmoid'))
-
-    elif model_type == "DRIVEN":
-        print("creating DRIVEN model")
-        #construct model
-        model = Sequential()
-        model.add(Dense(input_dim=i_dim, kernel_initializer='glorot_normal',units=300))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
-
-        model.add(Dense(input_dim=300, kernel_initializer='glorot_normal', units=100))
-        model.add(BatchNormalization())
-        model.add(Activation('relu'))
-
-        model.add(Dense(input_dim=100, kernel_initializer='glorot_normal', units=1))
-        model.add(Activation('sigmoid'))
-
-    sgd = optimizers.SGD(learning_rate=0.01, decay=1e-6, momentum=0.9, nesterov=True)
+    sgd = optimizers.legacy.SGD(learning_rate=0.01, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(loss='binary_crossentropy', optimizer=sgd, metrics=['accuracy'])
     
     return model
 
-def single_data_split(drug_feat, ddi_index, edges_all, drugs, dd_adj_list):
-    train, test, val = get_dp_for_single_se(ddi_index, edges_all)
-
+def single_data_split(drug_feat, ddi_index, train_dp, val_dp, test_dp, drugs, dd_adj_list):
     # train valid test split for drug features per side effect
     train_x, train_y = [], []
     val_x, val_y = [], []
     test_x, test_y = [], []
 
     vx, vy = [], []
-    for i in val:
+    for i in val_dp[ddi_index]:
+        if "_" in i:
+            i = i.split("_")
         d1, d2 = drugs.index(i[0]), drugs.index(i[1])
-        vx.append(drug_feat[d1] + drug_feat[d2])
+        vx.append(np.concatenate((drug_feat[d1], drug_feat[d2])))
         vy.append(dd_adj_list[ddi_index][d1, d2])
     val_x = np.array(vx)
     val_y = np.array(vy)
 
     tx, ty = [], []
-    for i in test:
+    for i in test_dp[ddi_index]:
+        if "_" in i:
+            i = i.split("_")
         d1, d2 = drugs.index(i[0]), drugs.index(i[1])
-        tx.append(drug_feat[d1] + drug_feat[d2])
+        tx.append(np.concatenate((drug_feat[d1], drug_feat[d2])))
         ty.append(dd_adj_list[ddi_index][d1, d2])
     test_x = np.array(tx)
     test_y = np.array(ty)
 
     trx, tr_y = [], []
-    for i in train:
+    for i in train_dp[ddi_index]:
+        if "_" in i:
+            i = i.split("_")
         d1, d2 = drugs.index(i[0]), drugs.index(i[1])
-        trx.append(drug_feat[d1] + drug_feat[d2])
+        trx.append(np.concatenate((drug_feat[d1], drug_feat[d2])))
         tr_y.append(dd_adj_list[ddi_index][d1, d2])
         
     train_x = np.array(trx)
@@ -233,7 +213,7 @@ def single_data_split(drug_feat, ddi_index, edges_all, drugs, dd_adj_list):
 
     return train_x, train_y, val_x, val_y, test_x, test_y
 
-def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, test_x, test_y, se2name, epoch=50, model_type='NNPS'):
+def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, test_x, test_y, se2name, epoch=50):
     #get criteria
     roc_score, aupr_score, f_score, thr =[], [], [], []
     precision, recall, tpos, fpos, tneg, fneg=[], [], [], [], [], []
@@ -241,23 +221,20 @@ def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, 
     
     k = ddi_index
     se = ddi_se[k]
-    print(f'On model for side effect {k}: {se2name[se]}')
+    if k%100 == 0:
+        print(f'On model for side effect {k}: {se2name[se]}')
 
-    model = construct_model(train_x.shape[1], model_type) 
+    model = construct_model(train_x.shape[1]) 
 
-    model.fit(train_x, train_y,batch_size=1024, epochs=epoch)
-    print("done fitting model")
+    model.fit(train_x, train_y,batch_size=1024, epochs=epoch, verbose=0)
 
-    val_loss, val_acc = model.evaluate(val_x, val_y)
-    print("done validating model")
-    print('Val accuracy:', val_acc)
+    # val_loss, val_acc = model.evaluate(val_x, val_y)
+    # print("done validating model")
+    # print('Val accuracy:', val_acc)
 
 
-    test_loss, test_acc = model.evaluate(test_x, test_y)
-    print("done testing model")
-    print('Test accuracy:', test_acc)
-    
-    test_pred = model.predict(test_x)
+    test_loss, test_acc = model.evaluate(test_x, test_y, verbose=0)
+    test_pred = model.predict(test_x, verbose=0)
 
     roc=metrics.roc_auc_score(test_y, test_pred)
     roc_score.append(roc)
@@ -289,27 +266,12 @@ def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, 
 
     mc=metrics.matthews_corrcoef(test_y,to_labels(test_pred, bt))
     mcc.append(mc)
-    
-    wandb.log({"side_effect": k, "val_acc": val_acc, "test_acc": test_acc,"roc": roc, "aupr": aupr, "f_score": ma, "precision": p, "recall": r, "acc": ac, "matthews_corr_coef": mc})
-    
-    model.save(f'trained_models/{name}/model_{k}.h5')
 
-    return [se, roc_score, aupr_score, precision, recall, f_score, acc, mcc]
+    if not os.path.exists(f'training/trained_models/{name}/'):
+        os.makedirs(f'training/trained_models/{name}/')
+    model.save(f'training/trained_models/{name}/model_{k}.keras')
 
-def start_wandb(project_name, feature_selection):
-    wandb.init(
-        # set the wandb project where this run will be logged
-        project=project_name,
-
-        # track hyperparameters and run metadata
-        config={
-        "learning_rate": 0.01,
-        "architecture": "DrIVeN",
-        "dataset": "DECAGON + Molecule",
-        "epochs": 50,
-        "feature_selection": feature_selection
-        }
-    )
+    return [se, roc, aupr, p, r, ma, ac, mc]
 
 
 
