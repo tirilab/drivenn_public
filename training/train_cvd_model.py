@@ -62,6 +62,10 @@ for i in range(len(one_cvd_ddi_se)):
     summary_for_model.append(scores)
 
 #save results
+
+if not os.path.exists('training/trained_models/model_scores/'):
+    os.makedirs('training/trained_models/model_scores/')
+
 results = pd.DataFrame(summary_for_model, columns=["se", "roc", "aupr", "precision", "recall", "f_score", "acc", "mcc", "duration"])
 results.to_csv(f'training/trained_models/model_scores/{run_type}_{methods}.csv', index=False, float_format='%.5f')
 
