@@ -23,22 +23,17 @@ se2name.update(se2name_class)
 
 # drugs with protein info
 drugs_w_protein = list(stitch2proteins.keys())
-print("drug proteins: " + str(len(drugs_w_protein)))
-
 # drugs with individual SE info 
 drugs_w_indiv_se = list(stitch2se.keys())
-print("indiv drugs: " + str(len(drugs_w_indiv_se)))
 
 # drugs with combo SE info
 combo_drugs = np.unique(np.array([i for pair in list(combo2stitch.values()) for i in pair]))
-print("combo drugs: " + str(len(combo_drugs)))
 
 # total drugs
 total_drugs = []
 [total_drugs.extend(li) for li in (drugs_w_protein, drugs_w_indiv_se, combo_drugs)]
 total_drugs = np.array(total_drugs)
 total_drugs = np.unique(np.array(total_drugs))
-print("total unique drugs: " + str(len(total_drugs)))
 
 
 # read in cvd drugs from NCATS
