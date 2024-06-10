@@ -126,4 +126,4 @@
 
 # Severity Analysis
 
-1. Analysis example in ```analysis/Severity_Analysis.ipynb```.
+1. Analysis example in ```analysis/Severity_Analysis.ipynb```. Note: exact values may vary with random seed.
