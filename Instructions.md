@@ -47,14 +47,14 @@
 
 1. Get drugs indicated for CVD diseases (CHF, MI, CAD) using NCATS_indications.py. If you wish to look up other diseases you can update 'facet' and 'name' variables in the script with the disease you want to search in NCATS API. 
 
-    ```python3 data_processing/NCATS_indications.py```
+    ```python3 data_processing/NCATS_indications.py``` (Depends on internet speed, but ~5 minutes.)
 
     Output Files: 
     - ```data/NCATS_exports/export_all_uid_CHF.tsv``` (tsv of Congestive Heart Failure indicated drugs)
     - ```data/NCATS_exports/export_all_uid_CAD.tsv``` (tsv of Coronary Artery Disease indicated drugs)
     - ```data/NCATS_exports/export_all_uid_MI.tsv``` (tsv of Myocardial Infarction indicated drugs)
 
-2. Create your CVD dataset by matching UNII records and manually looking up the rest of the drugs. Note: we have included the list of drugs we manually looked up in ```data/UNII_Data/manual_null_drugs.csv```, you can edit or add additional drugs to it if you wish.
+2. Create your CVD dataset by matching UNII records and manually looking up the rest of the drugs. Note: we have included the list of drugs we manually looked up in ```data/UNII_Data/manual_null_drugs.csv```, you can edit or add additional drugs to it if you wish. Otherwise, you can just run the command below.
 
     ```python3 data_processing/cvd_dataset_creation.py```
 
@@ -64,14 +64,14 @@
 
 3. Get your graph-based smiles drug embeddings.
 
-    ```python3 data_processing/pretrain_smiles_embedding.py -fi data/SMILES/drugname_smiles.txt -m gin_supervised_masking -fo csv -sc SMILE -o data/model_data/embeddings/```
+    ```python3 data_processing/pretrain_smiles_embedding.py -fi data/model_data/SMILES/drugname_smiles.txt -m gin_supervised_masking -fo csv -sc SMILE -o data/model_data/embeddings/```
 
     Output Files:
     -  ```data/model_data/embeddings/drugname_smiles.npy``` (file with generated smiles drug embeddings)
 
 4. Prepare and format data for faster training and easier reproducibility.
 
-    ```python3 data_prep.py```
+    ```python3 data_processing/data_prep.py```
 
     Output Files:
     - Basic Lists:

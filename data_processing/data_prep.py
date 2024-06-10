@@ -16,6 +16,26 @@ combo2stitch, combo2se, se2name, net, node2idx, stitch2se, se2name_mono, stitch2
 # read in smiles data
 smiles = read_smiles()
 
+# read in cvd df and create ordered lists
+cvd_df = pd.read_csv("data/cvd_df.csv")
+
+one_cvd = []
+two_cvd = []
+
+for key in list(combo2se.keys()):
+    drugs = key.split("_")
+    if len(drugs) > 1:
+        if drugs[0] in set(cvd_df.total_drugs):
+            one_cvd.append(key)
+            if drugs[1] in set(cvd_df.total_drugs):
+                two_cvd.append(key)
+        elif drugs[1] in set(cvd_df.total_drugs):
+            one_cvd.append(key)
+
+pd.DataFrame({"drug_pairs": one_cvd}).to_csv("data/model_data/one_cvd.csv")
+pd.DataFrame({"drug_pairs": two_cvd}).to_csv("data/model_data/two_cvd.csv")
+
+
 # get counts and create ordered lists of all drugs and proteins
 
 # get list of all drugs
@@ -191,25 +211,6 @@ np.savez('data/model_data/edge_list', *edge_list)
 
 # ------------------------------------ Construct Drug-Drug Interaction Matrices for Drug Pairs with at Least One CVD Drug ----------------------------------------
 print("Constructing CVD DDI Matrices Features")
-
-# read in cvd df and create ordered lists
-cvd_df = pd.read_csv("data/cvd_df.csv")
-
-one_cvd = []
-two_cvd = []
-
-for key in list(combo2se.keys()):
-    drugs = key.split("_")
-    if len(drugs) > 1:
-        if drugs[0] in set(cvd_df.total_drugs):
-            one_cvd.append(key)
-            if drugs[1] in set(cvd_df.total_drugs):
-                two_cvd.append(key)
-        elif drugs[1] in set(cvd_df.total_drugs):
-            one_cvd.append(key)
-
-pd.DataFrame({"drug_pairs": one_cvd}).to_csv("data/model_data/one_cvd.csv")
-pd.DataFrame({"drug_pairs": two_cvd}).to_csv("data/model_data/two_cvd.csv")
 
 one_cvd = pd.read_csv("data/model_data/one_cvd.csv")
 one_cvd_set = []
