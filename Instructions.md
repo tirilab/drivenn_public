@@ -39,6 +39,7 @@
     - ```data/UNII_Data/Legacy_UNIIs.txt``` 
 
 3. ADR_severity_data: Download SAEDR_scores as described in this [paper by Lavertu et. al.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8569532/) in Multimedia Appendix 2. Unzip by right clicking on it and place in ```data/ADR_severity_data/```.
+
     Saved Files:
     - ```data/ADR_severity_data/```
 
@@ -115,7 +116,7 @@
 
     Output Files:
     - ```training/trained_models/model_scores/drivenn_training_all_dps.csv``` (saved metrics from training for each model)
-    - ```training/trained_models/drivenn_training/all_dps/model_{i}.keras``` (saved trained model for each se)
+    - ```training/trained_models/drivenn_training/all_dps/model_{i}.keras``` (saved trained model for each se i)
 
 2. CVD model training. You can update feature selection method in script if you want to. Default is PCA(0.95). Outputs to ```../data/cvd_output/```.
 
