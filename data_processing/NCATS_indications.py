@@ -58,12 +58,12 @@ for facet, name in zip(['Condition/Congestive heart failure', 'Condition/Myocard
                             try:
                                 conditions.append(d['value']['label'])
                             except:
-                                print(d)
+                                pass
                         elif d['name'] == 'Targets':
                             try:
                                 targets.append(d['value']['label'])
                             except:
-                                print(d)
+                                pass
                         elif d['name'] == 'Sourcing':
                             sources.append(d['value']["sourcing_vendor_name"])
                             s_ids.append(d['value']["sourcing_vendor_substance_id"])
@@ -71,7 +71,7 @@ for facet, name in zip(['Condition/Congestive heart failure', 'Condition/Myocard
                             try:
                                 u_ids.append(d['value']['uid'])
                             except:
-                                print(d)
+                                pass
                         
     
                     # if status is available, format the values accordingly and write to file  
