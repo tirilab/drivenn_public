@@ -81,11 +81,11 @@ cvd_df = pd.merge(total_merged, cvd, on = 'UNII', how='inner').drop_duplicates("
 cvd_df.to_csv("data/updated_cvd_df.csv")
 
 # format smiles for next step
-smile = pd.read_csv("data/SMILES/id_SMILE.txt", sep='\t', header=None)
+smile = pd.read_csv("data/model_data/SMILES/id_SMILE.txt", sep='\t', header=None)
 smile.columns = ["ID", "SMILE"]
 smile['ID'] = smile['ID'].apply(lambda x: f'Drug::{x}')
 
-smile.to_csv("data/SMILES/drugname_smiles.txt", index=None, sep="\t")
+smile.to_csv("data/model_data/SMILES/drugname_smiles.txt", index=None, sep="\t")
 
 
 
