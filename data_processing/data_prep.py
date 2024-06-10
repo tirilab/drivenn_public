@@ -34,7 +34,6 @@ for d in pd.read_csv("data/model_data/one_cvd.csv")["drug_pairs"]:
     one_cvd_drugs.add(d2)  
 one_cvd_drugs = list(one_cvd_drugs)
 n_one_cvd_drugs = len(one_cvd_drugs)
-
 pd.DataFrame({"drugs": one_cvd_drugs}).to_csv("data/model_data/one_cvd_drugs_ordered.csv", index=False)
 
 # get list of all proteins
@@ -75,7 +74,6 @@ for i in range(n_drugs):
         dp_adj[i, k] = 1
 # save to npy file
 np.save('data/model_data/embeddings/dp_adj.npy', dp_adj)
-
 
 # read in drug molecule features (embeddings from dgllife)
 molecule_embeddings  = np.load('data/model_data/embeddings/drugname_smiles.npy')
@@ -132,10 +130,6 @@ for i in range(n_one_cvd_drugs):
 # save to npy file
 np.save('data/model_data/embeddings/cvd_mol_adj.npy', cvd_mol_adj)
 
-cvd_drug_feat = np.concatenate((cvd_drug_label, cvd_dp_adj, cvd_mol_adj), axis=1)
-
-print("full cvd drug feature shape: ", cvd_drug_feat.shape)
-
 # ------------------------------------ Construct Drug-Drug Interaction Matrices ----------------------------------------
 se2combo = {}
 ddi_types = []
@@ -164,8 +158,6 @@ pd.DataFrame({'ddi types': ddi_types}).to_csv("data/model_data/ddi_se_ordered.cs
 dd_adj_list = []
 
 for i in range(n_ddi_types):
-    if i%100 == 0:
-        print(f'On DDI matrix for SE number: {i}')
     mat = np.zeros((n_drugs, n_drugs))
     curr_se = ddi_types[i]
     drug_pairs_for_se = se2combo[curr_se]
@@ -180,7 +172,7 @@ for i in range(n_ddi_types):
 # save to npy file
 np.savez('data/model_data/embeddings/ddi_adj', *dd_adj_list)
 
-print(f'total drugs: {n_drugs} | total proteins: {n_proteins} | total mono se: {len(se_mono)} | total polypharmacy se: {len(ddi_types)}')
+# ------------------------------------ Construct Drug-Drug Interaction Matrices for Drug Pairs with at Least One CVD Drug ----------------------------------------
 
 # read in cvd files and create ordered cvd ddi lists
 one_cvd = pd.read_csv("data/model_data/one_cvd.csv")
@@ -203,6 +195,26 @@ one_cvd_ddi_types = list(one_cvd_ddi_counter_500.keys())
 
 pd.DataFrame({"cvd_ddi_se": one_cvd_ddi_types}).to_csv("data/model_data/one_cvd_ddi_se_ordered.csv", index=None)
 
+# format drug drug adjacency matrix for each side effect
+one_cvd_dd_adj_list = []
+
+for i in range(n_one_cvd_ddi_types):
+    mat = np.zeros((n_one_cvd_drugs, n_one_cvd_drugs))
+    curr_se = one_cvd_ddi_types[i]
+    drug_pairs_for_se = se2combo[curr_se]
+    for dp in drug_pairs_for_se:
+        if dp in one_cvd['drug_pairs']:
+            d1, d2 = dp.split("_")
+            drug1 = one_cvd_drugs.index(d1)
+            drug2 = one_cvd_drugs.index(d2)
+            mat[drug1, drug2] = 1
+            mat[drug2, drug1] = 1
+    one_cvd_dd_adj_list.append(mat)
+
+#save to npy file
+np.savez('data/model_data/embeddings/one_cvd_ddi_adj', *one_cvd_dd_adj_list)
+
+
 # ------------------------------------ Get Edges (All and CVD) ----------------------------------------
 np.random.seed(13)
 random.seed(42)
@@ -211,8 +223,6 @@ random.seed(42)
 edges_all = []
 
 for i in range(len(ddi_types)):
-    if i%100 == 0:
-        print(f'SE number: {i}')
     curr_se = ddi_types[i]
     curr_edges = se2combo[curr_se]
     curr_edges_set = set()
@@ -235,11 +245,8 @@ for i in range(len(ddi_types)):
     np.random.shuffle(all_edges)
     edges_all.append(all_edges[:len(c)])
 
+del c, n
 
-del c
-del n
-
-print('finished getting all edges for each SE')
 # save edges_all
 np.savez('data/model_data/edges_all', *edges_all)
 
@@ -247,8 +254,6 @@ np.savez('data/model_data/edges_all', *edges_all)
 one_cvd_edges_all = []
 
 for i in range(len(one_cvd_ddi_types)):
-    if i%100 == 0:
-        print(f'SE number: {i}')
     curr_se = one_cvd_ddi_types[i]
     curr_edges = se2combo[curr_se]
     curr_edges_set = set()
@@ -272,10 +277,7 @@ for i in range(len(one_cvd_ddi_types)):
     one_cvd_edges_all.append(all_edges[:len(c)])
 
 
-del c
-del n
-
-print('finished getting all edges for one cvd pairs')
+del c, n
 
 # save one_cvd_edges_all
 np.savez('data/model_data/one_cvd_edges_all', *one_cvd_edges_all)
@@ -289,7 +291,6 @@ def get_dp_for_single_se(k, edges_all):
     train=[]
 
     a = len(edges_all[k])//10
-    #print(f'se num: {k} | test and val size: {a} | train size {len(edges_all[k]) - 2*a}')
     val.append(edges_all[k][:a])
     test.append(edges_all[k][a:a+a])
     train.append(edges_all[k][a+a:])
