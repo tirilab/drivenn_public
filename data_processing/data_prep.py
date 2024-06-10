@@ -303,7 +303,7 @@ train_pairs, train_y = [], []
 val_pairs, val_y = [], []
 test_pairs, test_y = [], []
 
-for i, se in enumerate(one_cvd_ddi_list):
+for i, se in enumerate(one_cvd_ddi_types):
     edges = one_cvd_edge_list[i]
     np.random.seed(13)
     np.random.shuffle(edges)

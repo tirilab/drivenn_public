@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import scipy.sparse as sp
 from sklearn import metrics
-from utility import * 
+from training.utility import * 
 import os
 import csv
 

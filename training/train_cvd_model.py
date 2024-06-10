@@ -36,15 +36,18 @@ del mono_se_pca_vector, dp_pca_vector
 
 # ------------------------------------  CVD Model Training ----------------------------------------
 summary_for_model = []
+
 run_type = 'cvd_drivenn_training'
 methods = 'cvd_dps'
 
 for i in range(len(one_cvd_ddi_se)):
-    train_x, train_y, val_x, val_y, test_x, test_y = single_data_split(total_features, i, cvd_X_train, cvd_X_valid, cvd_X_test, one_cvd, one_cvd_ddi_adj)
+    cvd_train_x, cvd_val_x, cvd_test_x = single_data_split(total_features, i, \
+                                           cvd_train_pairs, cvd_val_pairs, cvd_test_pairs, \
+                                           one_cvd, one_cvd_ddi_adj)
     start = time.time()
     try:
         scores = train_single_model(f'{run_type}/{methods}', i, one_cvd_ddi_se, \
-                                train_x, train_y, val_x, val_y, test_x, test_y, \
+                                cvd_train_x, cvd_train_Y[i], cvd_val_x, cvd_val_Y[i], cvd_test_x, cvd_test_Y[i], \
                                 se2name)
     except:
         print("issue with model " + str(i))
