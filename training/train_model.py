@@ -11,7 +11,11 @@ combo2stitch, combo2se, se2name, net, node2idx, stitch2se, se2name_mono, stitch2
 smiles = read_smiles()
 drugs, proteins, se_mono, ddi_se = read_ordered_lists()
 mono_se_adj, dp_adj, mol_embed, ddi_adj = get_drug_features()
-all_X_train, all_X_valid, all_X_test = get_tvt()
+train_pairs, train_y, val_pairs, val_y, test_pairs, test_y = get_tvt()
+
+train_Y = [np.array([int(v) for v in se]) for se in train_y]
+test_Y = [np.array([int(v) for v in se]) for se in test_y]
+val_Y = [np.array([int(v) for v in se]) for se in val_y]
 
 # get x and y input for model
 
@@ -38,15 +42,19 @@ del mono_se_pca_vector, dp_pca_vector
 
 summary_for_model = []
 
-run_type = 'drivenn_training'
+run_type = 'drivenn_training_terminal'
 methods = 'all_dps'
 
 for i in range(len(ddi_se)):
-    train_x, train_y, val_x, val_y, test_x, test_y = single_data_split(total_features, i, all_X_train, all_X_valid, all_X_test, drugs, ddi_adj)
+    if i%100 == 0:
+        print("Training model for SE: " + str(i))
+    train_x, val_x, test_x = single_data_split(total_features, i, \
+                                           train_pairs, val_pairs, test_pairs, \
+                                           drugs, ddi_adj)
     start = time.time()
     try:
         scores = train_single_model(f'{run_type}/{methods}', i, ddi_se, \
-                                train_x, train_y, val_x, val_y, test_x, test_y, \
+                                train_x, train_Y[i], val_x, val_Y[i], test_x, test_Y[i], \
                                 se2name)
     except:
         print("issue with model " + str(i))

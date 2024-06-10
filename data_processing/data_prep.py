@@ -5,6 +5,7 @@ from collections import Counter
 from operator import add
 import random
 from sklearn.decomposition import PCA
+import csv
 
 # read in utils
 from utility import *
@@ -249,7 +250,7 @@ for i, se in enumerate(one_cvd_ddi_types):
             while not added_neg_edge:
                 rand_d1, rand_d2 = np.random.randint(0, len(one_cvd_drugs)), np.random.randint(0, len(one_cvd_drugs))
                 if mat[rand_d1, rand_d2] == 0:
-                    curr_edges.append([drugs[rand_d1] + "_" + drugs[rand_d2], 0])
+                    curr_edges.append([one_cvd_drugs[rand_d1] + "_" + one_cvd_drugs[rand_d2], 0])
                     added_neg_edge = True
     one_cvd_dd_adj_list.append(mat)
     one_cvd_edge_list.append(curr_edges)
@@ -269,7 +270,7 @@ train_pairs, train_y = [], []
 val_pairs, val_y = [], []
 test_pairs, test_y = [], []
 
-for i, se in enumerate(ddi_se):
+for i, se in enumerate(ddi_types):
     edges = edge_list[i]
     np.random.seed(13)
     np.random.shuffle(edges)
@@ -302,7 +303,7 @@ train_pairs, train_y = [], []
 val_pairs, val_y = [], []
 test_pairs, test_y = [], []
 
-for i, se in enumerate(one_cvd_ddi_se):
+for i, se in enumerate(one_cvd_ddi_list):
     edges = one_cvd_edge_list[i]
     np.random.seed(13)
     np.random.shuffle(edges)

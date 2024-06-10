@@ -86,25 +86,49 @@ def get_tvt():
     with open("data/model_data/TTS/test_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         test_pairs = list(csv_reader)
+    with open("data/model_data/TTS/test_y.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        test_y = list(csv_reader)
+        test_Y = [[int(v) for v in se] for se in test_y] 
     with open("data/model_data/TTS/val_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         val_pairs = list(csv_reader)
+    with open("data/model_data/TTS/val_y.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        val_y = list(csv_reader)
+        val_Y = [[int(v) for v in se] for se in val_y]
     with open("data/model_data/TTS/train_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         train_pairs = list(csv_reader)
-    return train_pairs, val_pairs, test_pairs
+    with open("data/model_data/TTS/train_y.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        train_y = list(csv_reader)
+        # train_Y = [[int(v) for v in se] for se in train_y]
+    return train_pairs, train_y, val_pairs, val_Y, test_pairs, test_Y
 
 def get_cvd_tvt():
     with open("data/model_data/TTS/cvd/test_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         test_pairs = list(csv_reader)
+    with open("data/model_data/TTS/cvd/test_y.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        test_y = list(csv_reader)
+        test_Y = [[int(v) for v in se] for se in test_y] 
     with open("data/model_data/TTS/cvd/val_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         val_pairs = list(csv_reader)
+    with open("data/model_data/TTS/cvd/val_y.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        val_y = list(csv_reader)
+        val_Y = [[int(v) for v in se] for se in val_y]
     with open("data/model_data/TTS/cvd/train_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         train_pairs = list(csv_reader)
-    return train_pairs, val_pairs, test_pairs
+    with open("data/model_data/TTS/cvd/train_y.csv", "r") as read_obj:
+        csv_reader = csv.reader(read_obj)
+        train_y = list(csv_reader)
+        train_Y = [[int(v) for v in se] for se in train_y]
+    return train_pairs, train_Y, val_pairs, val_Y, test_pairs, test_Y
 
 # ------------------------------- model training functions ------------------------------
 
@@ -152,42 +176,34 @@ def construct_model(i_dim):
 
 def single_data_split(drug_feat, ddi_index, train_dp, val_dp, test_dp, drugs, dd_adj_list):
     # train valid test split for drug features per side effect
-    train_x, train_y = [], []
-    val_x, val_y = [], []
-    test_x, test_y = [], []
+    train_x, val_x, test_x = [], [], []
 
-    vx, vy = [], []
+    vx = []
     for i in val_dp[ddi_index]:
         if "_" in i:
             i = i.split("_")
         d1, d2 = drugs.index(i[0]), drugs.index(i[1])
         vx.append(np.concatenate((drug_feat[d1], drug_feat[d2])))
-        vy.append(dd_adj_list[ddi_index][d1, d2])
     val_x = np.array(vx)
-    val_y = np.array(vy)
-
-    tx, ty = [], []
+    
+    tx = []
     for i in test_dp[ddi_index]:
         if "_" in i:
             i = i.split("_")
         d1, d2 = drugs.index(i[0]), drugs.index(i[1])
         tx.append(np.concatenate((drug_feat[d1], drug_feat[d2])))
-        ty.append(dd_adj_list[ddi_index][d1, d2])
     test_x = np.array(tx)
-    test_y = np.array(ty)
-
-    trx, tr_y = [], []
+    
+    trx = []
     for i in train_dp[ddi_index]:
         if "_" in i:
             i = i.split("_")
         d1, d2 = drugs.index(i[0]), drugs.index(i[1])
         trx.append(np.concatenate((drug_feat[d1], drug_feat[d2])))
-        tr_y.append(dd_adj_list[ddi_index][d1, d2])
-        
     train_x = np.array(trx)
-    train_y = np.array(tr_y)
+    
 
-    return train_x, train_y, val_x, val_y, test_x, test_y
+    return train_x, val_x, test_x
 
 def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, test_x, test_y, se2name, epoch=50):
     #get criteria
