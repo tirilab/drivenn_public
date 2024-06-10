@@ -96,15 +96,13 @@
         - ```data/model_data/embeddings/ddi_adj.npy``` (ordered drug-drug interaction matrix)
         - ```data/model_data/embeddings/one_cvd_ddi_adj.npy``` (ordered drug-drug interaction matrix for drug pairs with at least one cvd drug)
     - Edges
-        - ```data/model_data/edges_all``` (all edges)
-        - ```data/model_data/one_cvd_edges_all``` (all edges for drug pairs with at least one cvd drug)
-    - Train Validation Test Splits
-        - ```data/model_data/TTS/train_dps.npz``` (train drug pairs)
-        - ```data/model_data/TTS/valid_dps.npz``` (valid drug pairs)
-        - ```data/model_data/TTS/test_dps.npz``` (test drug pairs)
-        - ```data/model_data/TTS/one_cvd_train_dps.npz``` (train drug pairs for dataset of drug pairs with at least one cvd drug)
-        - ```data/model_data/TTS/one_cvd_valid_dps.npz``` (valid drug pairs for dataset of drug pairs with at least one cvd drug)
-        - ```data/model_data/TTS/one_cvd_test_dps.npz``` (test drug pairs for dataset of drug pairs with at least one cvd drug)
+        - ```data/model_data/edges_list.npz``` (edges for all drug pairs)
+        - ```data/model_data/one_cvd_edge_list.npz``` (all edges for drug pairs with at least one cvd drug)
+    - Train Validation Test Splits 
+        - ```data/model_data/TTS/{train|test|val}_pairs.csv``` (train/test/validation drug pairs)
+        - ```data/model_data/TTS/{train|test|val}_y.csv``` (train/test/validation y values (0 or 1 if known DDI for corresponding pair))
+        - ```data/model_data/TTS/cvd/{train|test|val}_pairs.csv``` (train/test/validation drug pairs for drug pairs with at least one CVD drug)
+        - ```data/model_data/TTS/cvd/{train|test|val}_y.csv``` (train/test/validation y values (0 or 1 if known DDI for corresponding pair))
 
 5. EDA example in notebook ```data_processing/EDA.ipynb```
 
