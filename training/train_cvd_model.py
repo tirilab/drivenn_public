@@ -12,7 +12,11 @@ smiles = read_smiles()
 drugs, proteins, se_mono, ddi_se = read_ordered_lists()
 one_cvd, one_cvd_ddi_se = read_cvd_lists()
 one_cvd_mono_se_adj, one_cvd_dp_adj, one_cvd_mol_embed, one_cvd_ddi_adj = get_cvd_drug_features()
-cvd_X_train, cvd_X_valid, cvd_X_test = get_cvd_tvt()
+cvd_train_pairs, cvd_train_y, cvd_val_pairs, cvd_val_y, cvd_test_pairs, cvd_test_y = get_cvd_tvt()
+
+cvd_train_Y = [np.array([int(v) for v in se]) for se in cvd_train_y]
+cvd_test_Y = [np.array([int(v) for v in se]) for se in cvd_test_y]
+cvd_val_Y = [np.array([int(v) for v in se]) for se in cvd_val_y]
 
 # get x and y input for model
 

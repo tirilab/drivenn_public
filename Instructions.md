@@ -116,7 +116,7 @@
     - ```training/trained_models/model_scores/drivenn_training_all_dps.csv``` (saved metrics from training for each model)
     - ```training/trained_models/drivenn_training/all_dps/model_{i}.keras``` (saved trained model for each se i)
 
-2. CVD model training. You can update feature selection method in script if you want to. Default is PCA(0.95). Outputs to ```../data/cvd_output/```.
+2. CVD model training. You can update feature selection method in script if you want to. Default is PCA(0.95).
 
     ```python3 training/cvd_training.py```
 
