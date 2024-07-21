@@ -41,7 +41,7 @@
 3. ADR_severity_data: Download SAEDR_scores as described in this [paper by Lavertu et. al.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8569532/) in Multimedia Appendix 2. Unzip by right clicking on it and place in ```data/ADR_severity_data/```.
 
     Saved Files:
-    - ```data/ADR_severity_data/```
+    - ```data/ADR_severity_data/SAEDR_scores.csv```
 
 # Data Processing
 
