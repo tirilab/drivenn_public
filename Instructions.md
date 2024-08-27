@@ -1,23 +1,15 @@
+This repository requires python 3.10.14. Follow the steps below to install the necessary dependencies.
+
 # Set Up Environment
 
-1. Clone GitHub repo and enter it.
+1. Clone GitHub repository.
    
    ```git clone https://github.com/tirilab/drivenn_public.git```
    
    ```cd drivenn_public```
 
-2. Create and activate a conda virtual environment with python 3.10.14.
-
-   ```conda create -n <venv_name> python=3.10.14```
-   
-   ```conda activate <venv_name>```
-
-3.  Install pip.
-
-    ```conda install pip```
-
-4.  Install requirements.txt.
-
+2.  Install requirements.txt.
+   ``` pip install --upgrade pip```
     ```pip install -r requirements.txt```
 
 # Data Files
@@ -118,7 +110,7 @@
 
 2. CVD model training. You can update feature selection method in script if you want to. Default is PCA(0.95).
 
-    ```python3 training/cvd_training.py```
+    ```python3 training/train_cvd_model.py```
 
     Output Files:
     - ```training/trained_models/model_scores/cvd_drivenn_training_cvd_dps.csv``` (saved metrics from training for each model)
