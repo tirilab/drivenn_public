@@ -9,6 +9,7 @@ This repository requires Python 3.10.14. Follow the steps below to install the n
    ```cd drivenn_public```
 
 2.  Install requirements.txt.
+
    ``` pip install --upgrade pip```
 
     ```pip install -r requirements.txt```
