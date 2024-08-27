@@ -4,15 +4,15 @@ This repository requires Python 3.10.14. Follow the steps below to install the n
 
 1. Clone GitHub repository.
    
-   ```git clone https://github.com/tirilab/drivenn_public.git```
+- ```git clone https://github.com/tirilab/drivenn_public.git```
    
-   ```cd drivenn_public```
+- ```cd drivenn_public```
 
 2.  Install requirements.txt.
 
-   ```pip install --upgrade pip```
+   - ```pip install --upgrade pip```
 
-   ```pip install -r requirements.txt```
+   - ```pip install -r requirements.txt```
 
 
 # Data Files
