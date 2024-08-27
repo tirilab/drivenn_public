@@ -1,5 +1,4 @@
-**/.DS_Store
-*/.DS_Store
+*.DS_Store
 *.keras
 *checkpoint.py
 *checkpoint.ipynb
@@ -9,7 +8,3 @@
 /data/decagon_data
 /data/ADR_severity_data
 *.pyc
-/data/UNII_Data
-analysis/.DS_Store
-data/.DS_Store
-/data/NCATS_exports
