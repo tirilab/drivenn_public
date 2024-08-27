@@ -53,8 +53,8 @@ for i in range(len(one_cvd_ddi_se)):
         scores = train_single_model(f'{run_type}/{methods}', i, one_cvd_ddi_se, \
                                 cvd_train_x, cvd_train_Y[i], cvd_val_x, cvd_val_Y[i], cvd_test_x, cvd_test_Y[i], \
                                 se2name)
-    except:
-        print("issue with model " + str(i))
+    except Exception as e:
+        print("issue with model " + str(i) + ": ", e)
         scores = [i, 0, 0, 0, 0, 0, 0, 0]
     stop = time.time()
     duration = stop-start

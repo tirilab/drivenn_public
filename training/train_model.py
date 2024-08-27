@@ -54,8 +54,8 @@ for i in range(len(ddi_se)):
         scores = train_single_model(f'{run_type}/{methods}', i, ddi_se, \
                                 train_x, train_Y[i], val_x, val_Y[i], test_x, test_Y[i], \
                                 se2name)
-    except:
-        print("issue with model " + str(i))
+    except Exception as e:
+        print("issue with model " + str(i) + ": ", e)
         scores = [i, 0, 0, 0, 0, 0, 0, 0]
     stop = time.time()
     duration = stop-start
