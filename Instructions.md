@@ -1,4 +1,4 @@
-This repository requires python 3.10.14. Follow the steps below to install the necessary dependencies.
+This repository requires Python 3.10.14. Follow the steps below to install the necessary dependencies.
 
 # Set Up Environment
 
@@ -10,6 +10,7 @@ This repository requires python 3.10.14. Follow the steps below to install the n
 
 2.  Install requirements.txt.
    ``` pip install --upgrade pip```
+
     ```pip install -r requirements.txt```
 
 # Data Files
