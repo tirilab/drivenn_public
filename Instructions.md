@@ -1,24 +1,19 @@
+This repository requires Python 3.10.14. Follow the steps below to install the necessary dependencies.
+
 # Set Up Environment
 
-1. Clone GitHub repo and enter it.
+1. Clone GitHub repository.
    
-   ```git clone https://github.com/tirilab/drivenn_public.git```
+- ```git clone https://github.com/tirilab/drivenn_public.git```
    
-   ```cd drivenn_public```
+- ```cd drivenn_public```
 
-2. Create and activate a conda virtual environment with python 3.10.14.
+2.  Install requirements.txt.
 
-   ```conda create -n <venv_name> python=3.10.14```
-   
-   ```conda activate <venv_name>```
+   - ```pip install --upgrade pip```
 
-3.  Install pip.
+   - ```pip install -r requirements.txt```
 
-    ```conda install pip```
-
-4.  Install requirements.txt.
-
-    ```pip install -r requirements.txt```
 
 # Data Files
 
@@ -41,7 +36,7 @@
 3. ADR_severity_data: Download SAEDR_scores as described in this [paper by Lavertu et. al.](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8569532/) in Multimedia Appendix 2. Unzip by right clicking on it and place in ```data/ADR_severity_data/```.
 
     Saved Files:
-    - ```data/ADR_severity_data/```
+    - ```data/ADR_severity_data/SAEDR_scores.csv```
 
 # Data Processing
 
@@ -118,7 +113,7 @@
 
 2. CVD model training. You can update feature selection method in script if you want to. Default is PCA(0.95).
 
-    ```python3 training/cvd_training.py```
+    ```python3 training/train_cvd_model.py```
 
     Output Files:
     - ```training/trained_models/model_scores/cvd_drivenn_training_cvd_dps.csv``` (saved metrics from training for each model)

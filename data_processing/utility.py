@@ -5,7 +5,7 @@ import pandas as pd
 # Returns dictionary from combination ID to pair of stitch IDs, 
 # dictionary from combination ID to list of polypharmacy side effects, 
 # and dictionary from side effects to their names.
-def load_combo_se(fname='data/decagon_data/bio-decagon-combo.csv'):
+def load_combo_se(fname="data/decagon_data/bio-decagon-combo.csv"):
     combo2stitch = {}
     combo2se = defaultdict(set)
     se2name = {}

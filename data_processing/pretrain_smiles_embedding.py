@@ -55,7 +55,6 @@ def graph_construction_and_featurization(smiles):
         Indicators for whether the SMILES string can be
         parsed by RDKit
     """
-    # print(len(smiles))
     graphs = []
     success = []
     for smi in smiles:
@@ -70,10 +69,8 @@ def graph_construction_and_featurization(smiles):
                                canonical_atom_order=False)
             graphs.append(g)
             success.append(True)
-            print(len(graphs))
         except:
             success.append(False)
-
     return graphs, success
 
 
@@ -98,7 +95,6 @@ def main(args, dataset, name):
         with torch.no_grad():
             node_repr = model(bg, nfeats, efeats)
         mol_emb.append(readout(bg, node_repr))
-    print(len(mol_emb))
     mol_emb = torch.cat(mol_emb, dim=0).detach().cpu().numpy()
     np.save(args['out_dir'] + '/' + name + '.npy', mol_emb)
 
@@ -135,8 +131,6 @@ if __name__ == '__main__':
         df = pd.read_csv(args['file'], sep="\t")
         smiles = df[args['smiles_column']].tolist()
         
-    print(len(smiles))
     name = args['file'].split('/')[-1].split('.')[0]
     dataset, success = graph_construction_and_featurization(smiles)
-    # np.save(args['out_dir'] + '/mol_parsed.npy', np.array(success))
     main(args, dataset, name)

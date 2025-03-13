@@ -70,8 +70,7 @@ for i in range(len(ddi_se)):
                                 train_x, train_Y[i], val_x, val_Y[i], test_x, test_Y[i], \
                                 se2name)
     except Exception as e:
-        print("issue with model " + str(i))
-        print(e)
+        print("issue with model " + str(i) + ": ", e)
         scores = [i, 0, 0, 0, 0, 0, 0, 0]
 
     stop = time.time()

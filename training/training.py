@@ -38,36 +38,36 @@ def read_smiles():
 
 	return smiles
 
-def read_ordered_lists():
+def read_ordered_lists(direct=""):
 	# get list of all drugs
-	drugs = list(pd.read_csv('data/model_data/drugs_ordered.csv')['drugs'])
+	drugs = list(pd.read_csv(direct + 'data/model_data/drugs_ordered.csv')['drugs'])
 
 	# get list of all proteins
-	proteins = list(pd.read_csv('data/model_data/proteins_ordered.csv')['proteins'])
+	proteins = list(pd.read_csv(direct + 'data/model_data/proteins_ordered.csv')['proteins'])
 
 	# get list of all mono se
-	se_mono = list(pd.read_csv('data/model_data/se_mono_ordered.csv')['se_mono'])
+	se_mono = list(pd.read_csv(direct + 'data/model_data/se_mono_ordered.csv')['se_mono'])
 
 	# get list of all ddi se
-	ddi_se = list(pd.read_csv('data/model_data/ddi_se_ordered.csv')['ddi types'])
+	ddi_se = list(pd.read_csv(direct + 'data/model_data/ddi_se_ordered.csv')['ddi types'])
 
 	return drugs, proteins, se_mono, ddi_se
 
-def read_cvd_lists():
+def read_cvd_lists(direct=""):
     # get list of one cvd drugs
-    one_cvd = list(pd.read_csv('data/model_data/one_cvd_drugs_ordered.csv')['drugs'])
+    one_cvd = list(pd.read_csv(direct + 'data/model_data/one_cvd_drugs_ordered.csv')['drugs'])
 
     # get list of cvd ddis
-    one_cvd_ddi_se = list(pd.read_csv('data/model_data/one_cvd_ddi_se_ordered.csv')['cvd_ddi_se'])
+    one_cvd_ddi_se = list(pd.read_csv(direct + 'data/model_data/one_cvd_ddi_se_ordered.csv')['cvd_ddi_se'])
 
     return one_cvd, one_cvd_ddi_se
 
-def get_drug_features():
-	mono_se_adj = np.load('data/model_data/embeddings/drug_label.npy')
-	dp_adj = np.load('data/model_data/embeddings/dp_adj.npy')
-	mol_embed = np.load('data/model_data/embeddings/mol_adj.npy')
+def get_drug_features(direct=""):
+	mono_se_adj = np.load(direct + 'data/model_data/embeddings/drug_label.npy')
+	dp_adj = np.load(direct + 'data/model_data/embeddings/dp_adj.npy')
+	mol_embed = np.load(direct + 'data/model_data/embeddings/mol_adj.npy')
 
-	container = np.load('data/model_data/embeddings/ddi_adj.npz')
+	container = np.load(direct + 'data/model_data/embeddings/ddi_adj.npz')
 	ddi_adj = [container[key] for key in container]
 
 	return mono_se_adj, dp_adj, mol_embed, ddi_adj
@@ -155,8 +155,8 @@ def perf_measure(y_actual, y_hat):
 
     return(TP, FP, TN, FN)
 
+
 def construct_model(i_dim):
-    # print("creating DRIVENN model")
     #construct model
     model = Sequential()
     model.add(Dense(input_dim=i_dim, kernel_initializer='glorot_normal',units=300))
@@ -228,7 +228,6 @@ def evaluate_model(model, test_x, test_y):
     return [roc, aupr, p, r, ma, ac, mc]
 
 def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, test_x, test_y, se2name, epoch=50):
-    #get criteria
     k = ddi_index
     se = ddi_se[k]
    
