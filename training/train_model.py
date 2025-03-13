@@ -65,12 +65,12 @@ for i in range(len(ddi_se)):
             model = load_model(model_path)  
             scores = [ddi_se[i]] + evaluate_model(model, test_x, test_Y[i])  
         else:
-            print(f"Model not found for index {i}: {model_path}")
+            print(f"Training model {i}")
             scores = train_single_model(f'{run_type}/{methods}/{seed}', i, ddi_se, \
                                 train_x, train_Y[i], val_x, val_Y[i], test_x, test_Y[i], \
                                 se2name)
     except Exception as e:
-        print("issue with model " + str(i) + ": ", e)
+        print(f"issue with model {i}")
         scores = [i, 0, 0, 0, 0, 0, 0, 0]
 
     stop = time.time()
