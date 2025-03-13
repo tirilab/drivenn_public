@@ -82,49 +82,50 @@ def get_cvd_drug_features():
 
 	return one_cvd_mono_se_adj, one_cvd_dp_adj, one_cvd_mol_embed, one_cvd_ddi_adj
 
-def get_tvt():
-    with open("data/model_data/TTS/test_pairs.csv", "r") as read_obj:
+def get_tvt(seed=13):
+    print(f"seed: {seed}")
+    with open(f"data/model_data/TTS/{seed}/test_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         test_pairs = list(csv_reader)
-    with open("data/model_data/TTS/test_y.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/test_y.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         test_y = list(csv_reader)
         test_Y = [[int(v) for v in se] for se in test_y] 
-    with open("data/model_data/TTS/val_pairs.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/val_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         val_pairs = list(csv_reader)
-    with open("data/model_data/TTS/val_y.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/val_y.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         val_y = list(csv_reader)
         val_Y = [[int(v) for v in se] for se in val_y]
-    with open("data/model_data/TTS/train_pairs.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/train_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         train_pairs = list(csv_reader)
-    with open("data/model_data/TTS/train_y.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/train_y.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         train_y = list(csv_reader)
         # train_Y = [[int(v) for v in se] for se in train_y]
     return train_pairs, train_y, val_pairs, val_Y, test_pairs, test_Y
 
-def get_cvd_tvt():
-    with open("data/model_data/TTS/cvd/test_pairs.csv", "r") as read_obj:
+def get_cvd_tvt(seed=13):
+    with open(f"data/model_data/TTS/{seed}/cvd/test_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         test_pairs = list(csv_reader)
-    with open("data/model_data/TTS/cvd/test_y.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/cvd/test_y.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         test_y = list(csv_reader)
         test_Y = [[int(v) for v in se] for se in test_y] 
-    with open("data/model_data/TTS/cvd/val_pairs.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/cvd/val_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         val_pairs = list(csv_reader)
-    with open("data/model_data/TTS/cvd/val_y.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/cvd/val_y.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         val_y = list(csv_reader)
         val_Y = [[int(v) for v in se] for se in val_y]
-    with open("data/model_data/TTS/cvd/train_pairs.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/cvd/train_pairs.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         train_pairs = list(csv_reader)
-    with open("data/model_data/TTS/cvd/train_y.csv", "r") as read_obj:
+    with open(f"data/model_data/TTS/{seed}/cvd/train_y.csv", "r") as read_obj:
         csv_reader = csv.reader(read_obj)
         train_y = list(csv_reader)
         train_Y = [[int(v) for v in se] for se in train_y]
@@ -205,12 +206,32 @@ def single_data_split(drug_feat, ddi_index, train_dp, val_dp, test_dp, drugs, dd
 
     return train_x, val_x, test_x
 
+def evaluate_model(model, test_x, test_y):
+    test_pred = model.predict(test_x, verbose=0)
+    
+    roc = metrics.roc_auc_score(test_y, test_pred)
+    aupr = metrics.average_precision_score(test_y, test_pred)
+    
+    fpr, tpr, thresholds = metrics.roc_curve(test_y, test_pred)
+    scores = [metrics.f1_score(test_y, to_labels(test_pred, t)) for t in thresholds]
+    ma = max(scores)
+    idx = np.argmax(scores)
+    bt = thresholds[idx]
+    
+    p = metrics.precision_score(test_y, to_labels(test_pred, bt))
+    r = metrics.recall_score(test_y, to_labels(test_pred, bt))
+    
+    TP, FP, TN, FN = perf_measure(test_y, to_labels(test_pred, bt))
+    ac = float(TP + TN) / (TP + FP + FN + TN)
+    mc = metrics.matthews_corrcoef(test_y, to_labels(test_pred, bt))
+    
+    return [roc, aupr, p, r, ma, ac, mc]
+
 def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, test_x, test_y, se2name, epoch=50):
     #get criteria
     k = ddi_index
     se = ddi_se[k]
-    if k%100 == 0:
-        print(f'On model for side effect {k}: {se2name[se]}')
+   
 
     model = construct_model(train_x.shape[1]) 
 
@@ -221,33 +242,14 @@ def train_single_model(name, ddi_index, ddi_se, train_x, train_y, val_x, val_y, 
     # print('Val accuracy:', val_acc)
 
 
-    test_loss, test_acc = model.evaluate(test_x, test_y, verbose=0)
-    test_pred = model.predict(test_x, verbose=0)
-
-    roc=metrics.roc_auc_score(test_y, test_pred)
-    aupr=metrics.average_precision_score(test_y,test_pred)
-
-    fpr, tpr, thresholds=metrics.roc_curve(test_y,test_pred)
-    scores=[metrics.f1_score(test_y, to_labels(test_pred, t)) for t in thresholds]
-    ma= max(scores)
-    idx=np.argmax(scores)
-    bt=thresholds[idx]
-
-    p=metrics.precision_score(test_y, to_labels(test_pred, bt))
-
-    r=metrics.recall_score(test_y, to_labels(test_pred, bt))
-
-    TP, FP, TN, FN=perf_measure(test_y,to_labels(test_pred, bt))
-
-    ac = float(TP + TN)/(TP+FP+FN+TN)
-
-    mc=metrics.matthews_corrcoef(test_y,to_labels(test_pred, bt))
+    [roc, aupr, p, r, ma, ac, mc] = evaluate_model(model, test_x, test_y)
 
     if not os.path.exists(f'training/trained_models/{name}/'):
         os.makedirs(f'training/trained_models/{name}/')
     model.save(f'training/trained_models/{name}/model_{k}.keras')
 
     return [se, roc, aupr, p, r, ma, ac, mc]
+
 
 
 
